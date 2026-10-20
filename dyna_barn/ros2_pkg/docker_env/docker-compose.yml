@@ -1,0 +1,47 @@
+services:
+  ros2:
+    container_name: ros2-humble-gz
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ros2-humble-gz:latest
+
+    # Pass all GPUs via NVIDIA Container Toolkit (no legacy runtime: needed)
+    gpus: all
+
+    # X11 display from host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      # Force Qt to X11 even on Wayland hosts (uses XWayland)
+      - QT_QPA_PLATFORM=xcb
+
+      # ROS 2 middleware (your original)
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+
+      # Make sure graphics capabilities are exposed (not just compute)
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics,display,video
+
+      # Prefer NVIDIA GLX vendor over Mesa
+      - __GLX_VENDOR_LIBRARY_NAME=nvidia
+
+      # Don’t force indirect GLX; let direct rendering work
+      - LIBGL_ALWAYS_INDIRECT=0
+
+    volumes:
+      # your workspace
+      - ../ws:/ws
+
+      # X11 socket from host
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+
+      # (optional but nice) Forward Xauthority cookie if you use xauth instead of xhost
+      # - ${XAUTHORITY:-$HOME/.Xauthority}:/home/dev/.Xauthority:ro
+
+    # Large shared memory helps Gazebo/ROS
+    shm_size: "1g"
+
+    # Quality-of-life for interactive shells
+    tty: true
+    stdin_open: true
