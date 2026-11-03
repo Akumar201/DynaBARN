@@ -25,6 +25,9 @@ services:
 
       # Prefer NVIDIA GLX vendor over Mesa
       - __GLX_VENDOR_LIBRARY_NAME=nvidia
+      # Hybrid-graphics laptops (display on the iGPU) need PRIME offload for NVIDIA GLX;
+      # harmless on desktops where the NVIDIA GPU drives the display
+      - __NV_PRIME_RENDER_OFFLOAD=1
 
       # Don’t force indirect GLX; let direct rendering work
       - LIBGL_ALWAYS_INDIRECT=0
