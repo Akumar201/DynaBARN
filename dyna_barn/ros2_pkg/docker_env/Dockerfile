@@ -31,9 +31,6 @@
         ros-humble-ros-gz \
      && rm -rf /var/lib/apt/lists/*
     
-    # Install Gazebo Classic via script
-    RUN curl -sSL http://get.gazebosim.org | sh
-    
     # Python deps
     RUN pip3 install --no-cache-dir \
         numpy \

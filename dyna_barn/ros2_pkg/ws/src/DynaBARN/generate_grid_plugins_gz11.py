@@ -187,6 +187,20 @@ def build_times(xs, ys, speed, dwell=0.25, speed_min=None, speed_max=None, rng=N
     return ts
 
 
+def default_jobs(gb_per_job=2.0):
+    """Each Gazebo plugin compile needs ~1GB+ RAM; one job per core can exhaust memory."""
+    cpus = os.cpu_count() or 2
+    try:
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith("MemAvailable:"):
+                    avail_gb = int(line.split()[1]) / (1024 * 1024)
+                    return max(1, min(cpus, int(avail_gb / gb_per_job)))
+    except OSError:
+        pass
+    return min(cpus, 4)
+
+
 # ---------- Main ----------
 def main():
     ap = argparse.ArgumentParser()
@@ -252,6 +266,13 @@ def main():
         choices=["constant", "segment", "agent"],
         default="constant",
         help="constant: use --speed; segment: random per segment; agent: random per robot",
+    )
+
+    ap.add_argument(
+        "--jobs",
+        type=int,
+        default=None,
+        help="parallel compile jobs (default: limited by free RAM, ~2GB per job)",
     )
 
     args = ap.parse_args()
@@ -364,7 +385,7 @@ def main():
     cwd = os.getcwd()
     os.chdir(build)
     subprocess.run(["cmake", ".."], check=True)
-    subprocess.run(["make", "-j", str(os.cpu_count() or 2)], check=True)
+    subprocess.run(["make", "-j", str(args.jobs or default_jobs())], check=True)
     os.chdir(cwd)
 
     # Assemble world
