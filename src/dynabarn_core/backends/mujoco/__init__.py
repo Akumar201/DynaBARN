@@ -21,7 +21,8 @@ class MujocoBackend(SimBackend):
         from ...core.scenario import Scenario
 
         scenario = Scenario.load(artifacts.scenario)
-        return MujocoSimulation(artifacts, self.assets.robot(scenario.robot.asset), **options)
+        return MujocoSimulation(artifacts, self.assets.robot(scenario.robot.asset),
+                                environment=self.assets.environment(scenario.environment), **options)
 
     def view(self, artifacts: Artifacts, control_hz: float = 20.0, **options) -> None:
         from .viewer import run_viewer

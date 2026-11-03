@@ -21,6 +21,7 @@ from .scenario import ObstacleSpec, RobotSpec, Scenario
 from .shapes import Box, Cylinder, ExtrudedPolygon, Shape, Sphere
 from .trajectories import (
     TRAJECTORIES,
+    PathTrajectory,
     PolynomialTrajectory,
     StaticTrajectory,
     Trajectory,
@@ -33,6 +34,6 @@ __all__ = [
     "Observation", "Odometry", "Pose3D", "SensorInfo", "SensorReading", "Twist2D", "VelocityCommand",
     "Registry", "RegistryError", "ObstacleSpec", "RobotSpec", "Scenario",
     "Box", "Cylinder", "ExtrudedPolygon", "Shape", "Sphere",
-    "TRAJECTORIES", "PolynomialTrajectory", "StaticTrajectory", "Trajectory",
+    "TRAJECTORIES", "PathTrajectory", "PolynomialTrajectory", "StaticTrajectory", "Trajectory",
     "WaypointTrajectory", "trajectory_from_dict",
 ]

@@ -55,6 +55,8 @@ class Scenario:
     robot: RobotSpec
     goal: Pose2D
     obstacles: tuple[ObstacleSpec, ...] = ()
+    # also simulate the environment's own moving objects (if it has any)
+    environment_obstacles: bool = True
     metadata: dict[str, Any] = field(default_factory=dict, compare=False)
     schema_version: int = SCHEMA_VERSION
 
@@ -75,6 +77,7 @@ class Scenario:
             "bounds": self.bounds.to_dict(),
             "robot": self.robot.to_dict(),
             "goal": self.goal.to_dict(),
+            "environment_obstacles": self.environment_obstacles,
             "metadata": dict(self.metadata),
             "obstacles": [o.to_dict() for o in self.obstacles],
         }
@@ -94,6 +97,7 @@ class Scenario:
             robot=RobotSpec.from_dict(d["robot"]),
             goal=Pose2D.from_dict(d["goal"]),
             obstacles=tuple(ObstacleSpec.from_dict(o) for o in d.get("obstacles", [])),
+            environment_obstacles=bool(d.get("environment_obstacles", True)),
             metadata=dict(d.get("metadata") or {}),
             schema_version=version,
         )

@@ -111,9 +111,13 @@ class SdfImporter(WorldImporter):
             if mpose is None:
                 return
             mpose = parent.compose(mpose)
-            if not static:
+            # non-static models are not part of the static environment; their
+            # shapes are kept (at their file pose) for importers that know how they move
+            if static:
+                target = objects
+            else:
                 skipped_dynamic.append(mname)
-                return
+                target = dynamic.setdefault(mname, [])
             for sub in model.findall("model"):
                 visit(sub, mpose, static)
             for link in model.findall("link"):
@@ -137,7 +141,7 @@ class SdfImporter(WorldImporter):
                         warnings.append(f"{where}: no geometry; skipped")
                         continue
                     g = geom[0]
-                    is_ground = "ground" in mname.lower()
+                    is_ground = static and "ground" in mname.lower()
                     if g.tag == "plane" or (is_ground and g.tag == "box"):
                         size = _floats(g.findtext("size")) or [100.0, 100.0]
                         ground = ((pose.x, pose.y), (size[0], size[1]))
@@ -146,23 +150,24 @@ class SdfImporter(WorldImporter):
                     names.add(name)
                     if g.tag == "box":
                         sx, sy, sz = _floats(g.findtext("size"))
-                        objects.append(StaticObject(name, Box((sx, sy, sz)), pose.x, pose.y, pose.z, pose.yaw, color))
+                        target.append(StaticObject(name, Box((sx, sy, sz)), pose.x, pose.y, pose.z, pose.yaw, color))
                     elif g.tag == "cylinder":
                         shape = Cylinder(float(g.findtext("radius")), float(g.findtext("length")))
-                        objects.append(StaticObject(name, shape, pose.x, pose.y, pose.z, pose.yaw, color))
+                        target.append(StaticObject(name, shape, pose.x, pose.y, pose.z, pose.yaw, color))
                     elif g.tag == "sphere":
                         shape = Sphere(float(g.findtext("radius")))
-                        objects.append(StaticObject(name, shape, pose.x, pose.y, pose.z, pose.yaw, color))
+                        target.append(StaticObject(name, shape, pose.x, pose.y, pose.z, pose.yaw, color))
                     elif g.tag == "polyline":
                         for k, poly in enumerate(geom.findall("polyline")):
                             pts = tuple(tuple(_floats(p.text)[:2]) for p in poly.findall("point"))
                             shape = ExtrudedPolygon(pts, float(poly.findtext("height") or 1.0))  # type: ignore[arg-type]
                             pname = name if k == 0 else f"{name}#{k}"
-                            objects.append(StaticObject(pname, shape, pose.x, pose.y, pose.z, pose.yaw, color))
+                            target.append(StaticObject(pname, shape, pose.x, pose.y, pose.z, pose.yaw, color))
                     else:
                         warnings.append(f"{where}: <{g.tag}> geometry is not supported; skipped")
 
         names: set[str] = set()
+        dynamic: dict[str, list[StaticObject]] = {}
         for model in world.findall("model"):
             visit(model, _Pose(), False)
         if skipped_dynamic:
@@ -186,4 +191,6 @@ class SdfImporter(WorldImporter):
             metadata={"source": {"importer": "sdf", "path": str(path), "world": world.get("name")},
                       "skipped_dynamic_models": skipped_dynamic},
         )
-        return ImportResult(env, warnings)
+        res = ImportResult(env, warnings)
+        res.dynamic_models = dynamic
+        return res

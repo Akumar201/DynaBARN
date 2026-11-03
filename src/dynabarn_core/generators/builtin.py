@@ -1,6 +1,7 @@
 """Built-in generators (lane and random motion, as in the original DynaBARN world generators)."""
 from __future__ import annotations
 
+import dataclasses
 import math
 import random
 from dataclasses import dataclass
@@ -19,8 +20,9 @@ class EmptyConfig(GeneratorConfig):
 class EmptyGenerator(Generator):
     """No moving obstacles: just the environment and the robot.
 
-    Useful for imported worlds. Starts at the environment's first spawn
-    when it has spawns and no start is given.
+    Useful for imported worlds. Starts at ``spawn`` if given, else at
+    ``start_x``/``start_y``/``start_yaw`` if any of them is set, else at the
+    environment's first spawn (if it has spawns).
     """
 
     Config = EmptyConfig
@@ -36,8 +38,11 @@ class EmptyGenerator(Generator):
         return Bounds(x0, x1, y0, y1)
 
     def start_pose(self) -> Pose2D:
-        env = self.assets.environment(self.config.environment)
-        if self.config.spawn is None and env.spawns:
+        c = self.config
+        env = self.assets.environment(c.environment)
+        defaults = {f.name: f.default for f in dataclasses.fields(c)}
+        start_given = any(getattr(c, k) != defaults[k] for k in ("start_x", "start_y", "start_yaw"))
+        if c.spawn is None and env.spawns and not start_given:
             return env.spawns[0].pose
         return super().start_pose()
 
@@ -63,62 +68,98 @@ class LanesConfig(GeneratorConfig):
 class LanesGenerator(Generator):
     """Obstacles shuttle back and forth along evenly spaced lanes.
 
-    When several obstacles share a lane, the lane is split into equal
-    sections ``lane_gap`` apart and each obstacle shuttles inside its own
-    section, so obstacles in a lane never meet. ``stagger_phase`` makes
-    neighbouring lanes (and sections) start in opposite directions.
+    Each lane is cut into its free stretches (walls, static objects and the
+    keep-clear zones around the robot's start and goal removed), and the
+    lane's obstacles are shared out over those stretches. Obstacles sharing
+    a stretch each get their own section, ``lane_gap`` apart, so they never
+    meet. ``stagger_phase`` makes neighbouring lanes (and sections) start in
+    opposite directions.
     """
 
     Config = LanesConfig
     config: LanesConfig
+    MIN_SECTION = 0.2  # shortest stretch an obstacle may shuttle along (m)
 
     def make_trajectories(self, rng: random.Random) -> list[Trajectory]:
         c = self.config
         n = c.lanes
+        reg = self.region()
+        # "bounds" gives the range of obstacle centres, so lanes span it edge to edge;
+        # "environment" is the physical extent (walls at its edges), so lanes go in
+        # the middle of n equal bands instead
+        spread = _linspace if c.area == "bounds" else _band_centres
         if c.axis == "row":
-            lane_pos, lo, hi = _linspace(c.y_min, c.y_max, n), c.x_min, c.x_max
+            lane_pos, lo, hi = spread(reg.y_min, reg.y_max, n), reg.x_min, reg.x_max
         else:
-            lane_pos, lo, hi = _linspace(c.x_min, c.x_max, n), c.y_min, c.y_max
-        # centre-to-centre gap between neighbouring sections
-        gap = c.lane_gap + 2 * self.obstacle_radius
+            lane_pos, lo, hi = spread(reg.x_min, reg.x_max, n), reg.y_min, reg.y_max
+        r = self.obstacle_radius
+        gap = c.lane_gap + 2 * r  # centre-to-centre gap between neighbouring sections
+        fs = self.free_space()
         per_lane = [0] * n
         for i in range(c.count):
             per_lane[i % n] += 1
-        for k in per_lane:
-            if k and (hi - lo - (k - 1) * gap) / k <= 0:
-                raise ClearanceError(
-                    f"{k} obstacles per lane with lane_gap={c.lane_gap} m do not fit in "
-                    f"{hi - lo:.1f} m; use more lanes, fewer obstacles or a smaller lane_gap"
-                )
+
+        # sections[lane] = list of (s0, s1) centre ranges along the lane, in order
+        sections: list[list[tuple[float, float]]] = []
+        for lane in range(n):
+            p = lane_pos[lane]
+            a, b = ((lo, p), (hi, p)) if c.axis == "row" else ((p, lo), (p, hi))
+            runs = [(lo + s0, lo + s1) for s0, s1 in fs.free_runs(a, b, r + c.static_clearance)]
+            sections.append(self._share(runs, per_lane[lane], gap, lane, p))
 
         trajs: list[Trajectory] = []
         slot = [0] * n
         for i in range(c.count):
             lane, j = i % n, slot[i % n]
             slot[lane] += 1
-            k = per_lane[lane]
-            width = (hi - lo - (k - 1) * gap) / k
-            s0 = lo + j * (width + gap)
-            s1 = s0 + width
+            s0, s1 = sections[lane][j]
             p = lane_pos[lane]
             a, b = ((s0, p), (s1, p)) if c.axis == "row" else ((p, s0), (p, s1))
             if c.stagger_phase and (lane + j) % 2 == 1:
                 a, b = b, a
             trajs.append(self.make_waypoints([a, b, a], rng))
 
-        # Neighbouring lanes can still be too close (e.g. many lanes, big obstacles).
+        # neighbouring lanes, or the environment's own moving objects, can still be too close
         checker = self.clearance_checker()
         if checker is not None:
             for i, t in enumerate(trajs):
-                d, j = checker.closest(t)
-                if d < checker.min_distance - 1e-9:
+                d, other = checker.closest(t, r)
+                if d < checker.clearance - 1e-9:
                     raise ClearanceError(
-                        f"obs_{i} comes within {d - 2 * self.obstacle_radius:.2f} m of obs_{j}; "
-                        f"lanes are too close for min_clearance={c.min_clearance}. "
-                        f"Use fewer lanes or a larger area."
+                        f"obs_{i} comes within {d:.2f} m of {other} (min_clearance={c.min_clearance}); "
+                        f"use fewer lanes, a larger area, or environment_obstacles=false"
                     )
-                checker.add(t)
+                checker.add(t, r, f"obs_{i}")
         return trajs
+
+    def _share(self, runs: list[tuple[float, float]], k: int, gap: float, lane: int, pos: float
+               ) -> list[tuple[float, float]]:
+        """Split ``k`` obstacles over the free runs, widest sections first."""
+        if k == 0:
+            return []
+        lengths = [b - a for a, b in runs]
+        m = [0] * len(runs)
+
+        def width(j: int, count: int) -> float:
+            return (lengths[j] - (count - 1) * gap) / count
+
+        for _ in range(k):
+            options = [(width(j, m[j] + 1), -j) for j in range(len(runs))]
+            if not options or max(options)[0] < self.MIN_SECTION:
+                free = sum(max(0.0, x) for x in lengths)
+                raise ClearanceError(
+                    f"lane {lane} (at {pos:.2f}) has room for {sum(m)} of its {k} obstacles "
+                    f"({free:.1f} m free in {len(runs)} stretch(es)); use more lanes, fewer obstacles, "
+                    f"a smaller lane_gap or keep_clear"
+                )
+            j = -max(options)[1]
+            m[j] += 1
+        out = []
+        for j, (a, _) in enumerate(runs):
+            if m[j]:
+                w = width(j, m[j])
+                out += [(a + q * (w + gap), a + q * (w + gap) + w) for q in range(m[j])]
+        return out
 
 
 @dataclass
@@ -130,7 +171,7 @@ class RandomConfig(GeneratorConfig):
     # free:  every obstacle roams the whole area; paths are re-drawn until
     #        they keep min_clearance (only feasible for a few obstacles).
     layout: str = "cells"
-    max_tries: int = 300  # layout=free: attempts per obstacle
+    max_tries: int = 300  # layout=free: attempts per obstacle; cells: per cell (capped at 30)
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -143,58 +184,87 @@ class RandomGenerator(Generator):
     """Obstacles move along random loops (waypoints or a bouncing walk).
 
     With ``layout=cells`` (default) each obstacle stays in its own grid cell,
-    so obstacles never overlap. With ``layout=free`` they roam the whole area
-    and paths are re-drawn until they keep ``min_clearance``.
+    so obstacles never overlap; cells with no usable free space (walls,
+    static objects, keep-clear zones) are skipped, and the grid is refined if
+    too few cells are usable. With ``layout=free`` obstacles roam the whole
+    area and paths are re-drawn until they keep ``min_clearance``. Every path
+    is checked against static objects (``static_clearance``) and the
+    environment's own moving objects.
     """
 
     Config = RandomConfig
     config: RandomConfig
+    REFINEMENTS = 6
 
     def make_trajectories(self, rng: random.Random) -> list[Trajectory]:
         c = self.config
-        if c.layout == "cells":
-            regions = self._cells(rng)
-            tries = 1
-        else:
-            regions = [(c.x_min, c.x_max, c.y_min, c.y_max)] * c.count
-            tries = c.max_tries
-        checker = self.clearance_checker()
-        if checker is None:
-            tries = 1
-        trajs: list[Trajectory] = []
-        for i, region in enumerate(regions):
-            best = None
-            for _ in range(tries):
-                sub = random.Random(rng.random())
-                path = self._bounce_path(sub, region) if c.bounce else self._random_path(sub, region)
-                if c.stagger_phase and i % 2 == 1:
-                    path = path[::-1]
-                traj = self.make_waypoints(path, sub)
-                if checker is None or checker.fits(traj):
-                    best = traj
-                    break
-            if best is None:
-                if c.layout == "cells":  # cannot happen unless cells are mis-sized
-                    raise AssertionError(f"cell layout produced an overlap for obs_{i}")
-                raise ClearanceError(
-                    f"placed only {i} of {c.count} obstacles: no path for obs_{i} keeps "
-                    f"min_clearance={c.min_clearance} m for {c.check_horizon:.0f} s after "
-                    f"{c.max_tries} tries. Use layout=cells, fewer obstacles, a shorter "
-                    f"check_horizon or min_clearance=none (allows overlaps)."
-                )
-            if checker is not None:
-                checker.add(best)
-            trajs.append(best)
-        return trajs
-
-    def _cells(self, rng: random.Random) -> list[tuple[float, float, float, float]]:
-        """One shrunken grid cell per obstacle, spread randomly over the area."""
-        c = self.config
         if c.count == 0:
             return []
-        w, h = c.x_max - c.x_min, c.y_max - c.y_min
-        nx = max(1, round(math.sqrt(c.count * w / h)))
-        ny = math.ceil(c.count / nx)
+        if c.layout == "free":
+            reg = self.region()
+            regions = [(reg.x_min, reg.x_max, reg.y_min, reg.y_max)] * c.count
+            out = self._place(rng, regions, c.max_tries, need=c.count)
+            if out is None:
+                raise ClearanceError(
+                    f"layout=free could not place all {c.count} obstacles keeping min_clearance="
+                    f"{c.min_clearance} m for {c.check_horizon:.0f} s after {c.max_tries} tries each. "
+                    f"Use layout=cells, fewer obstacles, a shorter check_horizon or min_clearance=none "
+                    f"(allows overlaps)."
+                )
+            return out
+        cells = c.count
+        for attempt in range(self.REFINEMENTS):
+            regions = self._cells(rng, cells)
+            out = self._place(rng, regions, min(c.max_tries, 30), need=c.count)
+            if out is not None:
+                return out
+            cells = math.ceil(cells * 1.5)  # finer grid: more, smaller cells to choose from
+        raise ClearanceError(
+            f"could not place {c.count} obstacles in the free space (walls, keep_clear, "
+            f"min_clearance, the environment's moving objects); use fewer obstacles, a smaller "
+            f"obstacle_asset, smaller keep_clear/static_clearance, or area=environment"
+        )
+
+    def _place(self, rng, regions, tries: int, need: int) -> list[Trajectory] | None:
+        """Try regions in order, one obstacle each, until ``need`` are placed."""
+        c = self.config
+        r = self.obstacle_radius
+        checker = self.clearance_checker()
+        if checker is None:
+            tries = min(tries, 30)
+        fs = self.free_space()
+        rr = r + c.static_clearance
+        trajs: list[Trajectory] = []
+        for region in regions:
+            if len(trajs) == need:
+                break
+            for _ in range(tries):
+                sub = random.Random(rng.random())
+                ok = lambda p: bool(fs.is_free([p], rr)[0])  # noqa: E731
+                path = self._bounce_path(sub, region) if c.bounce else self._random_path(sub, region, ok)
+                if path is None:
+                    break  # region has (almost) no free space
+                if c.stagger_phase and len(trajs) % 2 == 1:
+                    path = path[::-1]
+                traj = self.make_waypoints(path, sub)
+                if self.obstacle_free(path) and (checker is None or checker.fits(traj, r)):
+                    if checker is not None:
+                        checker.add(traj, r, f"obs_{len(trajs)}")
+                    trajs.append(traj)
+                    break
+            else:
+                if c.layout == "free":
+                    return None
+        return trajs if len(trajs) == need else None
+
+    def _cells(self, rng: random.Random, n: int) -> list[tuple[float, float, float, float]]:
+        """Grid cells (shrunk so neighbours keep their distance), spread randomly
+        over the area; cells with no free space at all are dropped."""
+        c = self.config
+        reg = self.region()
+        w, h = reg.x_max - reg.x_min, reg.y_max - reg.y_min
+        nx = max(1, round(math.sqrt(n * w / h)))
+        ny = math.ceil(n / nx)
         cw, ch = w / nx, h / ny
         # keep each obstacle's surface min_clearance/2 away from its cell edge
         margin = self.obstacle_radius + (c.min_clearance or 0.0) / 2 if c.min_clearance is not None else 0.0
@@ -206,15 +276,22 @@ class RandomGenerator(Generator):
             )
         cells = [(ix, iy) for ix in range(nx) for iy in range(ny)]
         rng.shuffle(cells)
-        return [
-            (c.x_min + ix * cw + margin, c.x_min + (ix + 1) * cw - margin,
-             c.y_min + iy * ch + margin, c.y_min + (iy + 1) * ch - margin)
-            for ix, iy in cells[: c.count]
-        ]
+        rects = [(reg.x_min + ix * cw + margin, reg.x_min + (ix + 1) * cw - margin,
+                  reg.y_min + iy * ch + margin, reg.y_min + (iy + 1) * ch - margin) for ix, iy in cells]
+        fs, rr = self.free_space(), self.obstacle_radius + c.static_clearance
+        return [q for q in rects if fs.free_fraction(*q, rr, n=6) > 0]
 
-    def _random_path(self, rng: random.Random, region) -> list[tuple[float, float]]:
+    def _random_path(self, rng: random.Random, region, ok) -> list[tuple[float, float]] | None:
         x0, x1, y0, y1 = region
-        pts = [(rng.uniform(x0, x1), rng.uniform(y0, y1)) for _ in range(max(2, self.config.points))]
+        pts = []
+        for _ in range(max(2, self.config.points)):
+            for _attempt in range(50):
+                p = (rng.uniform(x0, x1), rng.uniform(y0, y1))
+                if ok(p):
+                    break
+            else:
+                return None
+            pts.append(p)
         return _dedupe(pts + [pts[0]])
 
     def _bounce_path(self, rng: random.Random, region) -> list[tuple[float, float]]:
@@ -245,6 +322,10 @@ def _linspace(a: float, b: float, n: int) -> list[float]:
     if n == 1:
         return [(a + b) / 2.0]
     return [a + (b - a) * k / (n - 1) for k in range(n)]
+
+
+def _band_centres(a: float, b: float, n: int) -> list[float]:
+    return [a + (b - a) * (k + 0.5) / n for k in range(n)]
 
 
 def _dedupe(pts: list[tuple[float, float]]) -> list[tuple[float, float]]:

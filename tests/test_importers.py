@@ -203,5 +203,105 @@ def test_real_world_collection_imports_without_warnings(tmp_path):
         res = import_world(f)
         env = res.environment
         assert env.spawns, f
-        static_warnings = [w for w in res.warnings if "moving" not in w and "non-static" not in w]
-        assert not static_warnings, (f, static_warnings)
+        assert not res.warnings, (f, res.warnings)
+    movers = {f.name: len(import_world(f).environment.moving_objects) for f in folders if f.name.startswith("MO")}
+    assert movers == {"MO1_office_strip_moving": 5, "MO2_warehouse_moving": 28}
+
+
+# ---- world-collection moving objects ------------------------------------------------
+def _mo_model(name, x, y, z, size):
+    return (f'<model name="{name}"><static>false</static><pose>{x} {y} {z} 0 0 0</pose><link name="body">'
+            f'<collision name="c"><geometry><box><size>{size}</size></box></geometry></collision>'
+            f'<visual name="v"><geometry><box><size>{size}</size></box></geometry>'
+            f'<material><diffuse>0.95 0.55 0.15 1</diffuse></material></visual></link></model>')
+
+
+# loop 0,0 -> 2,0 -> 0,0 at 1 m/s with pi turns at both ends: 4 s + 2*pi s
+CYCLE = 4_000_000_000 + 2 * round(math.pi * 1e9)
+MO_SDF = SDF.replace("</world></sdf>", "".join([
+    _mo_model("mo_00", 1.0, 0.0, 0.51, "1.2 0.6 1.0"),   # 1 s ahead -> starts at (1, 0): correct
+    _mo_model("mo_01", 9.0, 9.0, 0.51, "1.2 0.6 1.0"),   # SDF pose not on its path: rejected
+    _mo_model("mo_02", 0.0, 5.0, 0.51, "1.2 0.6 1.0"),   # wrong cycle in world.yaml: rejected
+]) + "</world></sdf>")
+
+
+@pytest.fixture
+def mo_folder(tmp_path):
+    d = tmp_path / "MO9_test_moving"
+    d.mkdir()
+    (d / "MO9_test_moving.sdf").write_text(MO_SDF)
+    obj = "{{id: {id}, mode: loop, yaw_mode: heading, yaw: 0.0, speed_m_s: 1.0, phase_ns: {ph}, cycle_ns: {cy}, waypoints: [[0, {y}, 0], [2, {y}, 0]]}}"
+    (d / "world.yaml").write_text(
+        "id: MO9\nspawns: [{id: S1, x: -8.0, y: -8.0, yaw: 0.0}]\nmoving_objects:\n  turn_rate_rad_s: 1.0\n  objects:\n"
+        + "".join("  - " + obj.format(**o) + "\n" for o in (
+            dict(id="mo_00", ph=1_000_000_000, cy=CYCLE, y=0),
+            dict(id="mo_01", ph=0, cy=CYCLE, y=0),
+            dict(id="mo_02", ph=0, cy=8_000_000_000, y=5),
+        )))
+    return d
+
+
+def test_world_collection_moving_objects(mo_folder, tmp_path):
+    res = import_world(mo_folder)
+    env = res.environment
+    assert [m.id for m in env.moving_objects] == ["mo_00"]
+    mo = env.moving_objects[0]
+    assert mo.shape == Box((1.2, 0.6, 1.0)) and mo.z == pytest.approx(0.51)
+    assert mo.trajectory.cycle_ns == CYCLE
+    assert mo.color == (0.95, 0.55, 0.15, 1.0)
+    warnings = "\n".join(res.warnings)
+    assert "mo_01" in warnings and "differs from the SDF" in warnings
+    assert "mo_02" in warnings and "cycle" in warnings
+    assert "non-static" not in warnings  # replaced by the per-object results
+    # survives writing to and reading from an asset folder
+    write_environment(res, tmp_path / "out")
+    again = AssetLibrary([tmp_path / "out"], include_env=False).environment(env.id)
+    assert again.moving_objects[0].trajectory.pose_at(3.3) == mo.trajectory.pose_at(3.3)
+
+
+def test_environment_moving_objects_move_in_simulation(mo_folder, tmp_path):
+    pytest.importorskip("mujoco")
+    from dynabarn_core import DynaBarn
+
+    res = import_world(mo_folder)
+    lib = AssetLibrary(include_env=False).add(res.environment)
+    s = create_generator("empty", assets=lib, environment=res.environment.id, robot_asset="tb3_burger_cam").build()
+    db = DynaBarn(s, assets=lib, out_dir=tmp_path / "a")
+    traj = res.environment.moving_objects[0].trajectory
+    for _ in range(30):
+        db.step()
+    idx = next(i for i, o in db.sim._mocap if o.id == "mo_00")
+    x, y, _ = db.sim.data.mocap_pos[idx]
+    expect = traj.pose_at(db.time - db.sim.model.opt.timestep)
+    assert (x, y) == pytest.approx((expect.x, expect.y), abs=1e-6)
+    db.close()
+    # and can be switched off
+    s_off = create_generator("empty", assets=lib, environment=res.environment.id, robot_asset="tb3_burger_cam",
+                             environment_obstacles=False).build()
+    db = DynaBarn(s_off, assets=lib, out_dir=tmp_path / "b")
+    assert db.sim._mocap == []
+    db.close()
+
+
+def test_robot_collides_with_environment_moving_object(mo_folder, tmp_path):
+    pytest.importorskip("mujoco")
+    from dynabarn_core import DynaBarn
+
+    res = import_world(mo_folder)
+    lib = AssetLibrary(include_env=False).add(res.environment)
+    # park the robot on mo_00's path; the cart drives into it
+    s = create_generator("empty", assets=lib, environment=res.environment.id, robot_asset="tb3_burger_cam",
+                         start_x=1.9, start_y=0.0, start_yaw=math.pi / 2).build()
+    db = DynaBarn(s, assets=lib, out_dir=tmp_path / "c")
+    hit = set()
+    for _ in range(60):
+        hit |= {c.other for c in db.step().contacts}
+    db.close()
+    assert "mo_00" in hit
+
+
+def test_empty_generator_explicit_start_beats_first_spawn(wc_folder):
+    res = import_world(wc_folder)
+    lib = AssetLibrary(include_env=False).add(res.environment)
+    s = create_generator("empty", assets=lib, environment=res.environment.id, start_x=1.5, start_y=-0.5).build()
+    assert (s.robot.start.x, s.robot.start.y) == (1.5, -0.5)

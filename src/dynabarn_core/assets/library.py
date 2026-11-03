@@ -28,6 +28,7 @@ import yaml
 from ..core.registry import Registry
 from ..core.geometry import Pose2D
 from ..core.shapes import Box, ExtrudedPolygon, Shape, shape_from_dict, shape_to_dict
+from ..core.trajectories import Trajectory, trajectory_from_dict
 
 DEFAULT_ASSET_DIR = Path(__file__).resolve().parents[1] / "data" / "assets"
 ENV_VAR = "DYNABARN_ASSET_PATH"
@@ -328,14 +329,41 @@ class StaticObject:
                    color=_rgba(d.get("color"), (0.6, 0.6, 0.6, 1.0)))
 
     def footprint(self) -> tuple[float, float, float, float]:
-        """Conservative x_min, x_max, y_min, y_max in the world."""
-        r = self.shape.footprint_radius
+        """Exact x_min, x_max, y_min, y_max of the object's outline in the world."""
+        c, s = math.cos(self.yaw), math.sin(self.yaw)
         if isinstance(self.shape, ExtrudedPolygon):
-            c, s = math.cos(self.yaw), math.sin(self.yaw)
-            xs = [self.x + c * px - s * py for px, py in self.shape.points]
-            ys = [self.y + s * px + c * py for px, py in self.shape.points]
-            return min(xs), max(xs), min(ys), max(ys)
-        return self.x - r, self.x + r, self.y - r, self.y + r
+            local = self.shape.points
+        elif isinstance(self.shape, Box):
+            hx, hy = self.shape.size[0] / 2, self.shape.size[1] / 2
+            local = ((hx, hy), (-hx, hy), (-hx, -hy), (hx, -hy))
+        else:  # cylinder, sphere: a circle
+            r = self.shape.footprint_radius
+            return self.x - r, self.x + r, self.y - r, self.y + r
+        xs = [self.x + c * px - s * py for px, py in local]
+        ys = [self.y + s * px + c * py for px, py in local]
+        return min(xs), max(xs), min(ys), max(ys)
+
+
+@dataclass(frozen=True)
+class MovingObject:
+    """An obstacle that belongs to the environment and moves along a scripted
+    trajectory (e.g. world-collection's carts and pallet trucks). ``z`` is the
+    shape's centre height (base for an extruded polygon)."""
+
+    id: str
+    shape: Shape
+    z: float
+    trajectory: Trajectory
+    color: tuple[float, float, float, float] = (0.95, 0.55, 0.15, 1.0)
+
+    def to_dict(self) -> dict:
+        return {"id": self.id, "shape": shape_to_dict(self.shape), "z": self.z,
+                "color": list(self.color), "trajectory": self.trajectory.to_dict()}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "MovingObject":
+        return cls(str(d["id"]), shape_from_dict(d["shape"]), float(d["z"]),
+                   trajectory_from_dict(d["trajectory"]), _rgba(d.get("color"), (0.95, 0.55, 0.15, 1.0)))
 
 
 @dataclass(frozen=True)
@@ -354,6 +382,7 @@ class EnvironmentAsset(Asset):
     walls: tuple[Wall, ...] = ()            # simple form, kept for convenience
     objects: tuple[StaticObject, ...] = ()  # general static geometry
     spawns: tuple[Spawn, ...] = ()
+    moving_objects: tuple[MovingObject, ...] = ()
     # polygons (lists of x, y) covering the floor the robot can reach; empty = unknown
     free_space: tuple[tuple[tuple[float, float], ...], ...] = ()
     metadata: dict = field(default_factory=dict, compare=False)
@@ -390,6 +419,8 @@ class EnvironmentAsset(Asset):
                               "color": list(w.color)} for w in self.walls]
         if self.spawns:
             data["spawns"] = [{"id": s.id, "x": s.pose.x, "y": s.pose.y, "yaw": s.pose.yaw} for s in self.spawns]
+        if self.moving_objects:
+            data["moving_objects"] = [m.to_dict() for m in self.moving_objects]
         if self.free_space:
             data["free_space"] = [[list(p) for p in poly] for poly in self.free_space]
         if self.metadata:
@@ -421,6 +452,7 @@ class EnvironmentAsset(Asset):
             objects=tuple(StaticObject.from_dict(o) for o in data.get("objects", []) or []),
             spawns=tuple(Spawn(str(s["id"]), Pose2D(float(s["x"]), float(s["y"]), float(s.get("yaw", 0.0))))
                          for s in data.get("spawns", []) or []),
+            moving_objects=tuple(MovingObject.from_dict(m) for m in data.get("moving_objects", []) or []),
             free_space=tuple(tuple((float(x), float(y)) for x, y in poly) for poly in data.get("free_space", []) or []),
             metadata=dict(data.get("metadata") or {}),
         )

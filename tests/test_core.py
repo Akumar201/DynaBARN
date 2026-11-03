@@ -94,3 +94,45 @@ def test_registry_factory():
     assert A.registry_name == "a"
     with pytest.raises(RegistryError, match="Available: a"):
         reg.get("b")
+
+
+# ---- PathTrajectory (world-collection kinematics) ---------------------------------
+from dynabarn_core.core import PathTrajectory  # noqa: E402
+
+
+def test_path_loop_moves_turns_and_dwells():
+    # square loop, 1 m/s, turn 1 rad/s, 2 s dwell at w1
+    t = PathTrajectory(waypoints=((0, 0), (4, 0), (4, 4), (0, 4)), dwells=(0, 2, 0, 0), speed=1.0)
+    turn = math.pi / 2  # 90 deg at 1 rad/s
+    assert t.cycle_ns == round(16e9) + 4 * round(turn * 1e9) + round(2e9)
+    assert t.pose_at(2.0) == Pose2D(2.0, 0.0, 0.0)                    # moving east
+    p = t.pose_at(4.0 + turn / 2)                                      # halfway through the turn at w1
+    assert (p.x, p.y) == (4.0, 0.0) and p.yaw == pytest.approx(math.pi / 4)
+    p = t.pose_at(4.0 + turn + 1.0)                                    # dwelling at w1, facing the next leg
+    assert (p.x, p.y) == (4.0, 0.0) and p.yaw == pytest.approx(math.pi / 2)
+    p = t.pose_at(4.0 + turn + 2.0 + 1.0)                              # 1 m up the second leg
+    assert (p.x, p.y) == pytest.approx((4.0, 1.0)) and p.yaw == pytest.approx(math.pi / 2)
+    assert t.pose_at(t.period) == t.pose_at(0.0)
+
+
+def test_path_patrol_reverses_without_turning():
+    t = PathTrajectory(waypoints=((0, 0), (3, 0)), dwells=(1, 1), speed=1.0, mode="patrol")
+    assert t.cycle_ns == round(3e9) * 2 + round(1e9) * 2
+    back = t.pose_at(3 + 1 + 1.0)                                      # 1 s into the return pass
+    assert (back.x, back.yaw) == (2.0, 0.0)                            # drives backwards, still facing +x
+
+
+def test_path_fixed_yaw_and_phase():
+    t = PathTrajectory(waypoints=((0, 0), (2, 0)), speed=1.0, yaw_mode="fixed", yaw=1.0, phase=0.5)
+    assert t.pose_at(0.0) == Pose2D(0.5, 0.0, 1.0)                     # 0.5 s ahead, fixed heading
+    assert t.cycle_ns == round(4e9)                                    # loop back to w0, no turns
+
+
+def test_path_dict_round_trip_and_validation():
+    t = PathTrajectory(waypoints=((0, 0), (5, 1), (2, 3)), dwells=(0.5, 0, 1), speed=0.7, mode="patrol", phase=3.3)
+    again = trajectory_from_dict(t.to_dict())
+    assert again.cycle_ns == t.cycle_ns and again.pose_at(7.7) == t.pose_at(7.7)
+    for bad in (dict(waypoints=((0, 0),), speed=1), dict(waypoints=((0, 0), (1, 0)), speed=0),
+                dict(waypoints=((0, 0), (1, 0)), speed=1, mode="zigzag")):
+        with pytest.raises(ValueError):
+            PathTrajectory(**bad)

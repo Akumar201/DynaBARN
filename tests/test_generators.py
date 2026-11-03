@@ -83,7 +83,7 @@ def test_free_layout_reports_when_it_cannot_fit():
 
 
 def test_lanes_rejects_overfull_lane():
-    with pytest.raises(ValueError, match="do not fit"):
+    with pytest.raises(ValueError, match="has room for 10 of its 30"):
         create_generator("lanes", count=60, lanes=2, lane_gap=1.0).build(seed=0)
 
 

@@ -39,6 +39,7 @@ class MujocoSimulation(Simulation):
         enable: tuple[str, ...] | list[str] = (),
         disable: tuple[str, ...] | list[str] = (),
         render_cameras: bool | None = None,
+        environment=None,
     ) -> None:
         super().__init__()
         self.scenario = Scenario.load(artifacts.scenario)
@@ -60,12 +61,17 @@ class MujocoSimulation(Simulation):
                           for n in self.rep.binding("right_actuator").replace(",", " ").split()]
         self._root_qvel = m.jnt_dofadr[m.body_jntadr[self.root]]
 
+        # everything that moves on a script: the scenario's obstacles plus the
+        # environment's own moving objects (both have .id and .trajectory)
+        movers = list(self.scenario.obstacles)
+        if environment is not None and self.scenario.environment_obstacles:
+            movers += list(environment.moving_objects)
         self._mocap = [
             (m.body_mocapid[self.mj_id(mujoco.mjtObj.mjOBJ_BODY, OBSTACLE_PREFIX + o.id)], o)
-            for o in self.scenario.obstacles
+            for o in movers
         ]
         self._half_h = {o.id: float(m.body_pos[self.mj_id(mujoco.mjtObj.mjOBJ_BODY, OBSTACLE_PREFIX + o.id)][2])
-                        for o in self.scenario.obstacles}
+                        for o in movers}
         self._robot_geoms = {g for g in range(m.ngeom) if m.body_rootid[m.geom_bodyid[g]] == self.root}
         self._labels: dict[int, str] = {}
         for g in range(m.ngeom):

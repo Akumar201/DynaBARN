@@ -203,6 +203,128 @@ class WaypointTrajectory(Trajectory):
         return cls(times=tuple(times), points=tuple(pts), loop=loop, phase=phase)
 
 
+@TRAJECTORIES.register("path")
+@dataclass(frozen=True)
+class PathTrajectory(Trajectory):
+    """Waypoint path with speed, per-waypoint pauses, optional turning on the
+    spot and a start offset, as used by world-collection's moving objects.
+
+    mode:     "loop"   w0 -> w1 -> ... -> w(n-1) -> w0
+              "patrol" w0 -> ... -> w(n-1), then back -> ... -> w0
+    yaw_mode: "heading" faces along each segment and turns on the spot at
+              ``turn_rate`` (rad/s) at waypoints; a patrol drives the return
+              pass backwards without turning. "fixed" always faces ``yaw``.
+
+    Each segment is: move, then (heading mode) a turn towards the next
+    segment, then the pause at the waypoint reached. Durations are integer
+    nanoseconds rounded half-to-even, so the timing matches world-collection's
+    Gazebo plugin exactly (rules in its worldgen/moving.py, "Kinematics").
+    """
+
+    waypoints: tuple[tuple[float, float], ...]
+    speed: float
+    dwells: tuple[float, ...] = ()       # seconds per waypoint (default 0)
+    mode: str = "loop"
+    yaw_mode: str = "heading"
+    yaw: float = 0.0                     # used when yaw_mode == "fixed"
+    turn_rate: float = 1.0               # rad/s
+    phase: float = 0.0                   # seconds the motion is ahead at t = 0
+    _phases: tuple = field(init=False, repr=False, compare=False)
+    _cycle_ns: int = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        wps = tuple((float(x), float(y)) for x, y in self.waypoints)
+        dw = tuple(float(d) for d in self.dwells) or (0.0,) * len(wps)
+        object.__setattr__(self, "waypoints", wps)
+        object.__setattr__(self, "dwells", dw)
+        if len(wps) < 2:
+            raise ValueError("a path needs at least 2 waypoints")
+        if len(dw) != len(wps):
+            raise ValueError("need one dwell per waypoint")
+        if self.mode not in ("loop", "patrol"):
+            raise ValueError("mode must be 'loop' or 'patrol'")
+        if self.yaw_mode not in ("heading", "fixed"):
+            raise ValueError("yaw_mode must be 'heading' or 'fixed'")
+        if self.speed <= 0 or self.turn_rate <= 0:
+            raise ValueError("speed and turn_rate must be > 0")
+        self._build()
+
+    @staticmethod
+    def _wrap_delta(a: float) -> float:
+        d = math.remainder(a, 2 * math.pi)
+        return d + 2 * math.pi if d <= -math.pi else d
+
+    def _build(self) -> None:
+        w, n = self.waypoints, len(self.waypoints)
+        if self.mode == "loop":
+            segs = [(i, (i + 1) % n) for i in range(n)]
+        else:
+            segs = [(i, i + 1) for i in range(n - 1)] + [(i, i - 1) for i in range(n - 1, 0, -1)]
+
+        def seg_yaw(a: int, b: int) -> float:
+            if self.yaw_mode == "fixed":
+                return self.yaw
+            if self.mode == "patrol" and b < a:  # backward pass keeps the forward direction
+                a, b = b, a
+            return math.atan2(w[b][1] - w[a][1], w[b][0] - w[a][0])
+
+        yaws = [seg_yaw(a, b) for a, b in segs]
+        phases = []  # (start_ns, duration_ns, kind, data)
+        t = 0
+        for k, (a, b) in enumerate(segs):
+            dx, dy = w[b][0] - w[a][0], w[b][1] - w[a][1]
+            length = math.sqrt(dx * dx + dy * dy)
+            yaw_this, yaw_next = yaws[k], yaws[(k + 1) % len(segs)]
+            delta = self._wrap_delta(yaw_next - yaw_this) if self.yaw_mode == "heading" else 0.0
+            for kind, dur, data in (
+                ("move", round(length / self.speed * 1e9), (w[a], w[b], yaw_this)),
+                ("turn", round(abs(delta) / self.turn_rate * 1e9) if delta != 0 else 0, (w[b], yaw_this, delta)),
+                ("dwell", round(self.dwells[b] * 1e9), (w[b], yaw_next if delta != 0 else yaw_this)),
+            ):
+                if dur > 0:
+                    phases.append((t, dur, kind, data))
+                    t += dur
+        if t <= 0:
+            raise ValueError("path has zero duration")
+        object.__setattr__(self, "_phases", tuple(phases))
+        object.__setattr__(self, "_cycle_ns", t)
+
+    @property
+    def cycle_ns(self) -> int:
+        return self._cycle_ns
+
+    @property
+    def period(self) -> float | None:
+        return self._cycle_ns / 1e9
+
+    def pose_at(self, t: float) -> Pose2D:
+        T = self._cycle_ns
+        tau = ((round(t * 1e9) % T) + round(self.phase * 1e9)) % T
+        starts = [p[0] for p in self._phases]
+        start, dur, kind, data = self._phases[bisect.bisect_right(starts, tau) - 1]
+        f = float(tau - start) / float(dur)
+        if kind == "move":
+            (x0, y0), (x1, y1), yaw = data
+            return Pose2D(x0 + f * (x1 - x0), y0 + f * (y1 - y0), yaw)
+        if kind == "turn":
+            (x, y), yaw_this, delta = data
+            return Pose2D(x, y, yaw_this + f * delta)
+        (x, y), yaw = data
+        return Pose2D(x, y, yaw)
+
+    def params(self) -> dict:
+        return {"waypoints": [list(p) for p in self.waypoints], "speed": self.speed,
+                "dwells": list(self.dwells), "mode": self.mode, "yaw_mode": self.yaw_mode,
+                "yaw": self.yaw, "turn_rate": self.turn_rate, "phase": self.phase}
+
+    @classmethod
+    def from_params(cls, p: dict) -> "PathTrajectory":
+        return cls(waypoints=tuple(tuple(q) for q in p["waypoints"]), speed=float(p["speed"]),
+                   dwells=tuple(p.get("dwells") or ()), mode=p.get("mode", "loop"),
+                   yaw_mode=p.get("yaw_mode", "heading"), yaw=float(p.get("yaw", 0.0)),
+                   turn_rate=float(p.get("turn_rate", 1.0)), phase=float(p.get("phase", 0.0)))
+
+
 @TRAJECTORIES.register("polynomial")
 @dataclass(frozen=True)
 class PolynomialTrajectory(Trajectory):

@@ -48,6 +48,13 @@ class GeneratorConfig:
     # for the first `check_horizon` seconds. None allows them to overlap.
     min_clearance: float | None = 0.0
     check_horizon: float = 120.0
+    # where obstacles may move: "bounds" (x_min..y_max above) or "environment"
+    # (the environment's free-space outline, or its extent if it has none)
+    area: str = "bounds"
+    # keep obstacle surfaces this far from the robot's outline at its start and goal (m)
+    keep_clear: float = 0.3
+    # keep obstacle surfaces this far from walls and other static objects (m)
+    static_clearance: float = 0.1
     # what to put in the world (asset ids)
     obstacle_asset: str = "cylinder_red"
     robot_asset: str = "jackal"
@@ -57,6 +64,8 @@ class GeneratorConfig:
     start_yaw: float = 0.0
     # start at one of the environment's own start poses instead (e.g. "S1")
     spawn: str | None = None
+    # also simulate the environment's own moving objects (e.g. world-collection MO worlds)
+    environment_obstacles: bool = True
     goal_x: float = 10.0
     goal_y: float = 0.0
 
@@ -69,6 +78,10 @@ class GeneratorConfig:
             raise ValueError("count must be >= 0")
         if self.min_clearance is not None and self.min_clearance < 0:
             raise ValueError("min_clearance must be >= 0 (or None to allow overlaps)")
+        if self.area not in ("bounds", "environment"):
+            raise ValueError("area must be 'bounds' or 'environment'")
+        if self.keep_clear < 0 or self.static_clearance < 0:
+            raise ValueError("keep_clear and static_clearance must be >= 0")
 
     @property
     def bounds(self) -> Bounds:
@@ -80,29 +93,32 @@ class ClearanceError(ValueError):
 
 
 class ClearanceChecker:
-    """Accepts obstacle trajectories one at a time, rejecting any that would
-    come closer than ``min_distance`` (centre to centre) to one already
-    accepted within the time horizon."""
+    """Accepts moving things one at a time and reports how close a new one
+    would come to those already accepted, as the gap between their footprint
+    circles (centre distance minus both radii), sampled over the horizon."""
 
-    def __init__(self, min_distance: float, horizon: float, dt: float = 0.1) -> None:
-        self.min_distance = min_distance
+    def __init__(self, clearance: float, horizon: float, dt: float = 0.1) -> None:
+        self.clearance = clearance
         self.times = np.arange(0.0, horizon + 1e-9, dt)
-        self._tracks: list[np.ndarray] = []
+        self._tracks: list[tuple[np.ndarray, float, str]] = []
 
-    def closest(self, traj: Trajectory) -> tuple[float, int]:
-        """(closest distance, index of the obstacle it is closest to)."""
+    def closest(self, traj: Trajectory, radius: float) -> tuple[float, str]:
+        """(smallest surface gap, label of the thing it is closest to)."""
         if not self._tracks:
-            return float("inf"), -1
+            return float("inf"), ""
         xy = traj.positions(self.times)
-        dists = [float(np.min(np.linalg.norm(t - xy, axis=1))) for t in self._tracks]
-        i = int(np.argmin(dists))
-        return dists[i], i
+        best = (float("inf"), "")
+        for track, r, label in self._tracks:
+            gap = float(np.min(np.linalg.norm(track - xy, axis=1))) - r - radius
+            if gap < best[0]:
+                best = (gap, label)
+        return best
 
-    def fits(self, traj: Trajectory) -> bool:
-        return self.closest(traj)[0] >= self.min_distance - 1e-9
+    def fits(self, traj: Trajectory, radius: float) -> bool:
+        return self.closest(traj, radius)[0] >= self.clearance - 1e-9
 
-    def add(self, traj: Trajectory) -> None:
-        self._tracks.append(traj.positions(self.times))
+    def add(self, traj: Trajectory, radius: float, label: str = "") -> None:
+        self._tracks.append((traj.positions(self.times), radius, label))
 
 
 class Generator(ABC):
@@ -129,10 +145,46 @@ class Generator(ABC):
         return self.assets.obstacle(self.config.obstacle_asset).geometry.footprint_radius
 
     def clearance_checker(self) -> ClearanceChecker | None:
+        """Overlap check, preloaded with the environment's own moving objects."""
         c = self.config
         if c.min_clearance is None:
             return None
-        return ClearanceChecker(2 * self.obstacle_radius + c.min_clearance, c.check_horizon)
+        checker = ClearanceChecker(c.min_clearance, c.check_horizon)
+        if c.environment_obstacles:
+            for mo in self.assets.environment(c.environment).moving_objects:
+                checker.add(mo.trajectory, mo.shape.footprint_radius, mo.id)
+        return checker
+
+    def region(self) -> Bounds:
+        """Rectangle obstacles move in (see ``area``)."""
+        c = self.config
+        if c.area == "bounds":
+            return c.bounds
+        env = self.assets.environment(c.environment)
+        if env.free_space:
+            xs = [p[0] for poly in env.free_space for p in poly]
+            ys = [p[1] for poly in env.free_space for p in poly]
+            return Bounds(min(xs), max(xs), min(ys), max(ys))
+        return Bounds(*env.extent())
+
+    def free_space(self) -> "FreeSpace":
+        """Where obstacles may go: the region, minus static objects and keep-clear
+        circles around the robot's start and goal. Cached per generator."""
+        if getattr(self, "_free_space", None) is None:
+            from .freespace import FreeSpace
+
+            c = self.config
+            start = self.start_pose()
+            # measured from the robot's outline, so a robot waiting at its start or goal is never touched
+            k = self.assets.robot(c.robot_asset).footprint_radius + c.keep_clear
+            keep = [(start.x, start.y, k), (c.goal_x, c.goal_y, k)]
+            self._free_space = FreeSpace(self.assets.environment(c.environment), self.region(), keep)
+        return self._free_space
+
+    def obstacle_free(self, path, closed: bool = True) -> bool:
+        """Whether an obstacle can travel ``path`` without touching static objects."""
+        r = self.obstacle_radius + self.config.static_clearance
+        return self.free_space().path_free(path, r, closed=closed)
 
     @abstractmethod
     def make_trajectories(self, rng: random.Random) -> list[Trajectory]:
@@ -140,7 +192,7 @@ class Generator(ABC):
 
     def scenario_bounds(self) -> Bounds:
         """Region recorded in the scenario (where obstacles move)."""
-        return self.config.bounds
+        return self.region()
 
     def start_pose(self) -> Pose2D:
         c = self.config
@@ -178,6 +230,7 @@ class Generator(ABC):
             obstacles=tuple(
                 ObstacleSpec(f"obs_{i}", c.obstacle_asset, t) for i, t in enumerate(trajs)
             ),
+            environment_obstacles=c.environment_obstacles,
             metadata={"generator": self.registry_name, "config": dataclasses.asdict(c)},
         )
 

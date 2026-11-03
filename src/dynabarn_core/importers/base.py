@@ -29,6 +29,8 @@ class ImportResult:
     warnings: list[str] = field(default_factory=list)
     # files copied next to asset.yaml when written (e.g. the source's LICENSE)
     extra_files: dict[str, Path] = field(default_factory=dict)
+    # shapes of non-static models, by model name, at their pose in the file
+    dynamic_models: dict[str, list] = field(default_factory=dict)
 
 
 class WorldImporter(ABC):

@@ -11,6 +11,7 @@ from .library import (
     ImuSpec,
     JointStateSpec,
     LidarSpec,
+    MovingObject,
     ObstacleAsset,
     OdometrySpec,
     Representation,
@@ -23,6 +24,6 @@ from .library import (
 
 __all__ = [
     "ASSET_KINDS", "Asset", "AssetError", "AssetLibrary", "CameraSpec", "ContactSpec", "DiffDriveSpec",
-    "EnvironmentAsset", "GroundTruthSpec", "ImuSpec", "JointStateSpec", "LidarSpec", "ObstacleAsset",
+    "EnvironmentAsset", "GroundTruthSpec", "ImuSpec", "JointStateSpec", "LidarSpec", "MovingObject", "ObstacleAsset",
     "OdometrySpec", "Representation", "RobotAsset", "SensorSpec", "Spawn", "StaticObject", "Wall",
 ]

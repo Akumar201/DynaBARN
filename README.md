@@ -178,7 +178,7 @@ Moving obstacles follow scripted paths and do not collide with each other in any
 src/dynabarn_core/
   core/         Pose2D, Bounds, shapes, trajectories, Scenario, messages, Registry   (no ROS, no simulators)
   assets/       asset.yaml manifests -> Robot/Obstacle/Environment dataclasses, search path
-  generators/   Scenario generators (lanes, random, empty)
+  generators/   Scenario generators (lanes, random, empty), free-space queries
   importers/    world importers (sdf, world_collection)
   backends/     simulator adapters: SimBackend = Exporter + runtime (Simulation or launch_command)
     mujoco/     MuJoCo exporter, simulation, sensors, viewer
@@ -262,6 +262,21 @@ representations:
 
 Scenarios reference assets by id, so the same scenario file works with different asset sets.
 
+## Where obstacles may go
+
+Generators place obstacles only where they fit:
+
+- **Inside the area:** `area=bounds` (default) is the `x_min`…`y_max` rectangle. `area=environment` is the environment's free-floor outline, or its extent if it has none.
+- **Away from walls and other static objects:** by at least `static_clearance` (default 0.1 m).
+- **Away from the robot's start and goal:** by at least `keep_clear` (default 0.3 m), measured from the robot's outline, so a robot waiting there is never touched.
+- **Away from each other and from the environment's own moving objects:** by at least `min_clearance` over `check_horizon` seconds.
+
+Placement by generator:
+- **`lanes`:** each lane is cut into its free stretches, and the lane's obstacles are shared out over them.
+- **`random` (`layout=cells`):** cells with no usable floor are skipped, and the grid is refined when too few cells are usable.
+
+When something can't fit, generation stops with a message saying what to change. In an open arena everything is free, so existing scenarios are unchanged: the same seed gives the same scenario as before.
+
 ## Importing worlds from other tools
 
 Worlds made for other tools can be imported as environment assets, which every backend can then build. Importers keep **geometry and metadata only**. Simulator-specific parts such as Gazebo system plugins are dropped, because each backend adds what its simulator needs when it exports.
@@ -269,7 +284,7 @@ Worlds made for other tools can be imported as environment assets, which every b
 | Importer | Reads |
 | --- | --- |
 | `sdf` | Any SDF world whose static models use boxes, cylinders, spheres or polylines (extruded polygons). Anything it can't represent (meshes, `<include>`, tilted shapes, non-static models) is reported as a warning, never dropped silently |
-| `world_collection` | A world folder from [mertgulerx/world-collection](https://github.com/mertgulerx/world-collection) (Apache-2.0): the SDF plus `world.yaml` start poses, free-space outline, doors and measured difficulty values. Copies the world's LICENSE along with it |
+| `world_collection` | A world folder from [mertgulerx/world-collection](https://github.com/mertgulerx/world-collection) (Apache-2.0): the SDF plus `world.yaml` start poses, free-space outline, doors, measured difficulty values and **moving objects**. Copies the world's LICENSE along with it |
 
 ```bash
 git clone --depth 1 https://github.com/mertgulerx/world-collection
@@ -282,13 +297,23 @@ dynabarn --assets wc_assets view sc4.yaml
 In Python: `res = import_world("path/to/world")`, then `AssetLibrary().add(res.environment)`, or `write_environment(res, "my_assets")`.
 
 - **`empty` generator:** just the environment and robot, starting at the world's first spawn unless `spawn=` or `start_x`/`start_y` are given.
-- **Our moving obstacles inside imported maps:** not yet. Placing them needs the free-space outline (next step), as do the world-collection moving objects (`MO1`, `MO2`), which are kept in the metadata for now.
+- **The world's own moving objects** (world-collection `MO1`, `MO2`: carts, boxes, pallet trucks) are imported as `moving_objects` with a `path` trajectory and simulated by default. Turn them off with `-s environment_obstacles=false`.
+- **Our generated obstacles inside imported maps:** use `area=environment`. Lanes and random obstacles then only use floor the obstacle can actually reach:
+
+```bash
+dynabarn --assets wc_assets generate random -s environment=wc_p1_racetrack_office -s area=environment \
+    -s spawn=S1 -s count=12 -s bounce=true -s points=20 -o p1_dynamic.yaml
+dynabarn --assets wc_assets view p1_dynamic.yaml
+```
 - **Concave polygons:** MuJoCo collides meshes as convex hulls, so concave polygons are split into convex prisms automatically.
+
+**The `path` trajectory** implements world-collection's motion rules: loop or patrol through waypoints, a pause per waypoint, turning on the spot, a start offset, and integer-nanosecond timing. On import, every object's cycle length must equal `cycle_ns` and its pose at t = 0 must equal its pose in the SDF; anything that disagrees is reported, not imported.
 
 **Checked against all 43 world-collection worlds:**
 - Every world imports, and object counts match the SDF.
 - At every spawn, both robots start clear of walls and rest on the floor.
 - The free floor area computed from the imported geometry matches the author's measured value to 0.00% in 42 worlds. The 500 m maze differs by 0.14%, from the coarser check grid; the author's tolerance is 2%.
+- All 33 moving objects match the author's cycle lengths to the nanosecond and their SDF start poses. Recomputing the author's "M4" check (closest any two objects get, sampled every 0.1 s over 7,800 s) from our trajectories gives **bit-identical** values for both worlds.
 
 ## Using it in your own project
 

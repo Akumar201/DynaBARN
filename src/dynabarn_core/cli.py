@@ -138,7 +138,9 @@ def cmd_generate(args, assets: AssetLibrary) -> int:
         raise SystemExit("give a generator (lanes, random) or --preset NAME")
     scenario = gen.build(seed=args.seed, name=args.name)
     path = scenario.save(args.output)
-    print(f"wrote {path} ({len(scenario.obstacles)} obstacles)")
+    env_movers = len(gen.assets.environment(scenario.environment).moving_objects) if scenario.environment_obstacles else 0
+    extra = f" + {env_movers} moving objects from environment '{scenario.environment}'" if env_movers else ""
+    print(f"wrote {path} ({len(scenario.obstacles)} obstacles{extra})")
     return 0
 
 

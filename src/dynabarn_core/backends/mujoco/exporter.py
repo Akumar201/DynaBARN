@@ -104,6 +104,22 @@ class MujocoExporter(Exporter):
             ET.SubElement(body, "geom", name=OBSTACLE_PREFIX + ob.id, rgba=_rgba(a.color),
                           **geom_attrs(a.geometry))
 
+        if scenario.environment_obstacles:
+            taken = {o.id for o in scenario.obstacles}
+            for mo in env.moving_objects:
+                if mo.id in taken:
+                    raise BackendError(f"obstacle id '{mo.id}' is used by both the scenario and "
+                                       f"environment '{env.id}'")
+                if isinstance(mo.shape, ExtrudedPolygon):
+                    raise BackendError(f"moving object '{mo.id}': polygon shapes cannot move in MuJoCo yet")
+                p = mo.trajectory.pose_at(0.0)
+                body = ET.SubElement(
+                    world, "body", name=OBSTACLE_PREFIX + mo.id, mocap="true",
+                    pos=_f(p.x, p.y, mo.z), quat=_f(*yaw_to_quat_wxyz(p.yaw)),
+                )
+                ET.SubElement(body, "geom", name=OBSTACLE_PREFIX + mo.id, rgba=_rgba(mo.color),
+                              **geom_attrs(mo.shape))
+
         self._merge_robot(robot, scenario, compiler, sections)
 
         for name in _MERGED_SECTIONS:  # drop empty sections
