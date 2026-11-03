@@ -29,6 +29,18 @@ install(DIRECTORY worlds
   DESTINATION share/${PROJECT_NAME}
 )
 
+# World generators (ros2 run dynabarn2 generate_movers.py ...)
+install(PROGRAMS
+  scripts/generate_movers.py
+  scripts/generate_polynomial.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(FILES
+  scripts/world_sdf.py
+  scripts/polynomial_fit.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in")
 
 ament_package()
