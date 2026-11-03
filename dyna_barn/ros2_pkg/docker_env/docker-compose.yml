@@ -1,10 +1,10 @@
 services:
   ros2:
-    container_name: ros2-humble-gz
+    container_name: ros2-jazzy-gz
     build:
       context: .
       dockerfile: Dockerfile
-    image: ros2-humble-gz:latest
+    image: ros2-jazzy-gz:latest
 
     # Pass all GPUs via NVIDIA Container Toolkit (no legacy runtime: needed)
     gpus: all
