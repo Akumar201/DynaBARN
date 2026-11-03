@@ -1,4 +1,4 @@
-# Ignore system files
+# System files
 .DS_Store
 Thumbs.db
 
@@ -6,24 +6,20 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 *.so
+*.egg-info/
+build/
+dist/
+.pytest_cache/
 
 # Environments
 .env
 .venv/
 venv/
 
-# Logs
+# Logs and local output
 *.log
+/out/
 
 # IDE settings
 .vscode/
 .idea/
-
-# ROS 2 workspace build artifacts
-dyna_barn/ros2_pkg/ws/build
-dyna_barn/ros2_pkg/ws/install
-dyna_barn/ros2_pkg/ws/log
-
-# Generated DynaBARN plugins and worlds
-dyna_barn/ros2_pkg/ws/src/DynaBARN/plugins/
-dyna_barn/ros2_pkg/ws/src/DynaBARN/worlds/

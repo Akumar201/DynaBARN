@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dynabarn-core"
+version = "0.1.0"
+description = "DynaBARN dynamic-obstacle navigation scenarios and simulation (MuJoCo by default), a base for ROS 2 and other DynaBARN projects"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "BSD-3-Clause" }
+authors = [{ name = "Ankit Kumar", email = "ankitkumar3.1428@gmail.com" }]
+dependencies = ["numpy", "pyyaml", "mujoco>=3.0"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+dynabarn = "dynabarn_core.cli:main"
+
+# Other packages (e.g. a ROS 2 bridge, another simulator) extend dynabarn-core through these entry point groups:
+#   dynabarn_core.backends, dynabarn_core.generators, dynabarn_core.trajectories, dynabarn_core.asset_kinds
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Ship the default assets (asset.yaml, MJCF, meshes, ...) and presets in the wheel.
+[tool.setuptools.package-data]
+dynabarn_core = ["data/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

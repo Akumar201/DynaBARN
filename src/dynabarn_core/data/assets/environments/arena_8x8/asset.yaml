@@ -1,0 +1,10 @@
+# Burger-scale arena: the 20 x 20 m DynaBARN arena scaled by ~0.4 (Burger 0.21 m vs Jackal 0.51 m).
+id: arena_8x8
+kind: environment
+description: 8 x 8 m ground with back, top and bottom walls; open towards +x (TurtleBot3 scale)
+ground: {size: [12, 12]}
+walls:
+  - {name: back_wall,   pose: [-4, 0, 0], size: [0.2, 8, 0.4], color: [0.2, 0.3, 0.8]}
+  - {name: top_wall,    pose: [0, 4, 0],  size: [8, 0.2, 0.4], color: [0.2, 0.3, 0.8]}
+  - {name: bottom_wall, pose: [0, -4, 0], size: [8, 0.2, 0.4], color: [0.2, 0.3, 0.8]}
+representations: {}

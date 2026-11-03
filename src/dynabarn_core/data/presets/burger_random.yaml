@@ -1,0 +1,18 @@
+description: TurtleBot3 scale - Burger, 8 x 8 m arena, 16 small obstacles moving randomly in cells
+generator: random
+params:
+  robot_asset: tb3_burger_cam
+  environment: arena_8x8
+  obstacle_asset: cylinder_small
+  x_min: -3.2
+  x_max: 3.2
+  y_min: -3.2
+  y_max: 3.2
+  start_x: -3.75
+  goal_x: 4.0
+  count: 16
+  bounce: true
+  points: 30
+  speed_mode: agent
+  speed_min: 0.08
+  speed_max: 0.2

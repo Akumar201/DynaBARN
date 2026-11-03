@@ -1,0 +1,56 @@
+# Clearpath Jackal: the robot the BARN / DynaBARN benchmarks were designed for.
+id: jackal
+kind: robot
+description: Clearpath Jackal (skid steer, 0.51 x 0.43 m) with 270 deg lidar and front camera
+base_frame: base_link
+footprint_radius: 0.33        # circle around the 0.508 x 0.430 m body
+
+drive:
+  type: diff_drive            # skid steer, commanded like a differential drive
+  wheel_radius: 0.098
+  wheel_separation: 0.87      # EFFECTIVE track for skid steer (physical 0.376), measured in MuJoCo
+  max_linear: 2.0
+  max_angular: 4.0
+
+# Sensors. Each one has a unique name (used by DynaBarn.get / subscribe),
+# `enabled` and `rate_hz`. Realistic extras are OFF by default; switch them on here
+# or at runtime with DynaBarn.configure_sensor(name, ...).
+sensors:
+  lidar:                        # Hokuyo UST-10LX, as on the BARN Jackal
+    frame: base_scan
+    samples: 720
+    angle_min: -2.356
+    angle_max: 2.356
+    range_min: 0.1
+    range_max: 10.0
+    rate_hz: 40
+    noise_std: 0.0              # m   (UST-10LX spec: ~0.04)
+  imu:
+    frame: imu_link
+    rate_hz: 200
+    gyro_noise_std: 0.0         # rad/s
+    accel_noise_std: 0.0        # m/s^2
+  odometry:
+    frame: odom
+    rate_hz: 50
+    source: ground_truth        # or `wheels`: skid steer slips when turning, so wheel odometry drifts
+    linear_noise_std: 0.0
+    angular_noise_std: 0.0
+  joint_states: {rate_hz: 50}
+  contact: {rate_hz: 50}
+  ground_truth: {rate_hz: 50}
+  cameras:                      # off by default: rendering is costly and needs OpenGL
+    - {name: rgb,   frame: front_camera, width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false}
+    - {name: depth, frame: front_camera, width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false, depth: true}
+
+representations:
+  mujoco:
+    format: mjcf
+    path: mujoco/robot.xml
+    bindings:
+      root_body: base_link
+      left_actuator: front_left_vel rear_left_vel
+      right_actuator: front_right_vel rear_right_vel
+      lidar_site: base_scan
+      rgb_camera: front_cam
+      depth_camera: front_cam

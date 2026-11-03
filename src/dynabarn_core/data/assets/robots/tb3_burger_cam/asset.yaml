@@ -1,0 +1,62 @@
+# TurtleBot3 Burger with an RGB and a depth camera.
+# Generic description first; simulator-specific files under `representations`.
+id: tb3_burger_cam
+kind: robot
+description: TurtleBot3 Burger (differential drive) with 2D lidar, RGB and depth cameras
+base_frame: base_link
+footprint_radius: 0.105
+
+drive:
+  type: diff_drive
+  wheel_radius: 0.033
+  wheel_separation: 0.160
+  max_linear: 0.22      # m/s
+  max_angular: 2.84     # rad/s
+
+# Sensors. Each one has a unique name (used by DynaBarn.get / subscribe),
+# `enabled` and `rate_hz`. Realistic extras are OFF by default; switch them on here
+# or at runtime with DynaBarn.configure_sensor(name, ...).
+sensors:
+  lidar:                        # LDS-01
+    frame: base_scan
+    samples: 360
+    angle_min: 0.0
+    angle_max: 6.28
+    range_min: 0.12
+    range_max: 3.5
+    rate_hz: 5
+    noise_std: 0.0              # m   (original Gazebo model: 0.01)
+  imu:
+    frame: imu_link
+    rate_hz: 200
+    gyro_noise_std: 0.0         # rad/s (original Gazebo model: 2e-4)
+    accel_noise_std: 0.0        # m/s^2 (original Gazebo model: 1.7e-2)
+  odometry:
+    frame: odom
+    rate_hz: 30
+    source: ground_truth        # or `wheels`: integrated wheel rotation, drifts with slip
+    linear_noise_std: 0.0       # relative error per metre travelled (wheels only)
+    angular_noise_std: 0.0      # relative error per radian / metre (wheels only)
+  joint_states: {rate_hz: 30}
+  contact: {rate_hz: 50}
+  ground_truth: {rate_hz: 50}   # exact world pose, for evaluation
+  cameras:                      # off by default: rendering is costly and needs OpenGL
+    - {name: rgb,   frame: camera_link, width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false}
+    - {name: depth, frame: camera_link, width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false, depth: true}
+
+# One entry per simulator. `bindings` maps dynabarn's generic names to the
+# names used inside that simulator's file, so you can drop in a different
+# model without changing any code.
+representations:
+  mujoco:
+    format: mjcf
+    path: mujoco/robot.xml
+    bindings:
+      root_body: base_link
+      left_actuator: wheel_left_vel
+      right_actuator: wheel_right_vel
+      lidar_site: base_scan
+      rgb_camera: rgb_cam
+      depth_camera: rgb_cam
+  # gz:      {format: sdf, path: gz/model.sdf}          # milestone 2
+  # isaac:   {format: usd, path: isaac/tb3_burger.usd}  # milestone 3

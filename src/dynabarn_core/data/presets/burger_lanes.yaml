@@ -1,0 +1,16 @@
+description: TurtleBot3 scale - Burger, 8 x 8 m arena, 18 small obstacles in 6 lanes
+generator: lanes
+params:
+  robot_asset: tb3_burger_cam
+  environment: arena_8x8
+  obstacle_asset: cylinder_small
+  x_min: -3.2
+  x_max: 3.2
+  y_min: -3.2
+  y_max: 3.2
+  start_x: -3.75
+  goal_x: 4.0
+  count: 18
+  lanes: 6
+  lane_gap: 0.4
+  speed: 0.15

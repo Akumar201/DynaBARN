@@ -1,0 +1,9 @@
+# Default DynaBARN moving obstacle (same size/colour as the original worlds).
+id: cylinder_red
+kind: obstacle
+description: Red cylinder, radius 0.25 m, height 0.5 m
+geometry: {type: cylinder, radius: 0.25, length: 0.5}
+color: [0.8, 0.1, 0.1, 1.0]
+mass: 1.0
+# Optional: per-backend mesh/model that replaces the primitive geometry.
+representations: {}

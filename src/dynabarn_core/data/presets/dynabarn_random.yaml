@@ -1,0 +1,3 @@
+description: Standard DynaBARN scale - Jackal, 20 x 20 m arena, 36 obstacles moving randomly in cells
+generator: random
+params: {count: 36, bounce: true, points: 30, speed_mode: agent, speed_min: 0.5, speed_max: 1.5}

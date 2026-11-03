@@ -1,0 +1,3 @@
+description: Standard DynaBARN scale - Jackal, 20 x 20 m arena, 36 obstacles in 6 lanes
+generator: lanes
+params: {}   # the generator defaults are the standard Jackal setup
