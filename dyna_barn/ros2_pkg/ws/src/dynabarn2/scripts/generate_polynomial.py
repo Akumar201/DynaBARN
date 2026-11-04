@@ -72,7 +72,7 @@ def main():
         name = f"world_{i}"
         out = os.path.join(args.save_dir, f"{name}.sdf")
         with open(out, "w") as f:
-            f.write(world_sdf.world(name, models))
+            f.write(world_sdf.world(models))
         print(f"Wrote {out} ({len(models)} obstacles)")
 
 

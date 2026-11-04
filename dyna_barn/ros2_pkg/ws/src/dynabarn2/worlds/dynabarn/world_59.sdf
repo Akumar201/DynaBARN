@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.10">
-  <world name="dynabarn_world_59">
+  <world name="default">
     <physics name="default_physics" type="ignored">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
@@ -9,6 +9,11 @@
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
     <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
 
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
@@ -32,7 +37,14 @@
       <link name="link">
         <collision name="collision"><geometry><box><size>0.5 20 1.0</size></box></geometry></collision>
         <visual name="visual"><geometry><box><size>0.5 20 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
     </model>
     <model name="top_wall">
       <static>true</static>
@@ -40,7 +52,14 @@
       <link name="link">
         <collision name="collision"><geometry><box><size>20 0.5 1.0</size></box></geometry></collision>
         <visual name="visual"><geometry><box><size>20 0.5 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
     </model>
     <model name="bottom_wall">
       <static>true</static>
@@ -48,7 +67,14 @@
       <link name="link">
         <collision name="collision"><geometry><box><size>20 0.5 1.0</size></box></geometry></collision>
         <visual name="visual"><geometry><box><size>20 0.5 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
     </model>
 
     <model name="mediumlibobs_68">
@@ -61,7 +87,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -91,7 +124,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -118,7 +158,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -142,7 +189,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -165,7 +219,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -187,7 +248,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -215,7 +283,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -246,7 +321,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -271,7 +353,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -296,7 +385,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -324,7 +420,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -349,7 +452,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -378,7 +488,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>
@@ -403,7 +520,14 @@
         </inertial>
         <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
         <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
       </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>true</loop>
         <interpolation>spline</interpolation>

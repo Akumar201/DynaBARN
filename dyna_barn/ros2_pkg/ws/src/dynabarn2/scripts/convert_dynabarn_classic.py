@@ -59,7 +59,7 @@ def main():
         stem = os.path.splitext(fname)[0]
         out = os.path.join(args.save_dir, f"{stem}.sdf")
         with open(out, "w") as f:
-            f.write(world_sdf.world(f"dynabarn_{stem}", models))
+            f.write(world_sdf.world(models))
         print(f"Wrote {out} ({len(models)} obstacles)")
 
 

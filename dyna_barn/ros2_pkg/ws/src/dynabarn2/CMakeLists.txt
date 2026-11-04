@@ -25,7 +25,7 @@ install(TARGETS DynaBarnObstacleMover
   LIBRARY DESTINATION lib
 )
 
-install(DIRECTORY worlds data
+install(DIRECTORY worlds data config launch
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -34,6 +34,7 @@ install(PROGRAMS
   scripts/generate_movers.py
   scripts/generate_polynomial.py
   scripts/convert_dynabarn_classic.py
+  scripts/trial_runner.py
   DESTINATION lib/${PROJECT_NAME}
 )
 install(FILES

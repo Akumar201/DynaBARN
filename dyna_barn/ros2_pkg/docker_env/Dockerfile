@@ -31,6 +31,9 @@
         ros-jazzy-navigation2 \
         ros-jazzy-nav2-bringup \
         ros-jazzy-teleop-twist-keyboard \
+        # Clearpath Jackal (J100) description, Gazebo bringup and Nav2 examples
+        ros-jazzy-clearpath-simulator \
+        ros-jazzy-clearpath-nav2-demos \
      && rm -rf /var/lib/apt/lists/*
 
     # Create a non-root user (Noble images ship an "ubuntu" user on UID/GID 1000)

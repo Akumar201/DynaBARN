@@ -23,7 +23,7 @@ interpolation (`SAMPLE <t> <x> <y>`). Record the same world in Harmonic, unthrot
 `-z` is an update rate in Hz, not a speed multiplier):
 
 ```bash
-gz topic -e -t /world/dynabarn_world_45/dynamic_pose/info > harmonic.txt &
+gz topic -e -t /world/default/dynamic_pose/info > harmonic.txt &
 gz sim -s -r -z 100000 --iterations 70000 worlds/dynabarn/world_45.sdf
 python3 compare_motion.py classic.txt harmonic.txt
 ```

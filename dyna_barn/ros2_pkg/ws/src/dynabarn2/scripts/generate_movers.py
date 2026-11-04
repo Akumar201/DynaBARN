@@ -172,7 +172,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--save_dir", default="./worlds")
-    ap.add_argument("--name", default="world_movers", help="world name and output file stem")
+    ap.add_argument("--name", default="world_movers", help="output file stem")
     # bounds & lanes
     ap.add_argument("--rows", type=int, default=6)
     ap.add_argument("--cols", type=int, default=6)
@@ -244,7 +244,7 @@ def main():
 
     out = os.path.join(args.save_dir, f"{args.name}.sdf")
     with open(out, "w") as f:
-        f.write(world_sdf.world(args.name, models))
+        f.write(world_sdf.world(models))
     print(f"Wrote {out} ({len(models)} obstacles)")
 
 

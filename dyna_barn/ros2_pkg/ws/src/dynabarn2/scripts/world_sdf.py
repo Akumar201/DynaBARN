@@ -4,6 +4,10 @@ Obstacles are moved by the DynaBarnObstacleMover system (see src/ObstacleMover.c
 so a world is a single self-contained .sdf file: no per-obstacle plugins to compile.
 """
 
+# BARN and Clearpath's bringup both address the world as "default".
+WORLD_NAME = "default"
+ROBOT_NAME = "robot"
+
 WALL_COLOR = "0 0 1 1"
 OBSTACLE_COLOR = "1 0 0 1"
 
@@ -11,6 +15,18 @@ OBSTACLE_COLOR = "1 0 0 1"
 def _material(rgba):
     return (f"<material><ambient>{rgba}</ambient><diffuse>{rgba}</diffuse>"
             f"<specular>0.1 0.1 0.1 1</specular></material>")
+
+
+# Publishes on /robot/touched whenever this model's contact sensor touches the robot.
+TOUCH_SENSOR = ('<sensor name="sensor_contact" type="contact">'
+                '<contact><collision>collision</collision></contact></sensor>')
+TOUCH_PLUGIN = f"""
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>{ROBOT_NAME}</target>
+        <namespace>{ROBOT_NAME}</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>"""
 
 
 def wall(name, x, y, sx, sy, h=1.0):
@@ -22,7 +38,8 @@ def wall(name, x, y, sx, sy, h=1.0):
       <link name="link">
         <collision name="collision">{geom}</collision>
         <visual name="visual">{geom}{_material(WALL_COLOR)}</visual>
-      </link>
+        {TOUCH_SENSOR}
+      </link>{TOUCH_PLUGIN}
     </model>"""
 
 
@@ -54,7 +71,8 @@ def obstacle(name, waypoints, radius=0.5, height=1.0, mass=10.0,
         </inertial>
         <collision name="collision">{geom}</collision>
         <visual name="visual">{geom}{_material(OBSTACLE_COLOR)}</visual>
-      </link>
+        {TOUCH_SENSOR}
+      </link>{TOUCH_PLUGIN}
       <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
         <loop>{str(loop).lower()}</loop>
         <interpolation>{interpolation}</interpolation>
@@ -63,14 +81,14 @@ def obstacle(name, waypoints, radius=0.5, height=1.0, mass=10.0,
     </model>"""
 
 
-def world(name, models, walls=None, step_size=0.001):
+def world(models, walls=None, step_size=0.001):
     """Full world SDF: physics + core systems, ground, sun, walls and the given model XML."""
     if walls is None:
         walls = default_walls()
     ground = ("<geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>")
     return f"""<?xml version="1.0" ?>
 <sdf version="1.10">
-  <world name="{name}">
+  <world name="{WORLD_NAME}">
     <physics name="default_physics" type="ignored">
       <max_step_size>{step_size}</max_step_size>
       <real_time_factor>1.0</real_time_factor>
@@ -79,6 +97,11 @@ def world(name, models, walls=None, step_size=0.001):
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
     <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
 
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
