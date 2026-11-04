@@ -1,0 +1,481 @@
+<?xml version="1.0" ?>
+<sdf version="1.10">
+  <world name="dynabarn_world_48">
+    <physics name="default_physics" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry></collision>
+        <visual name="visual"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry><material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+    </model>
+
+    <model name="back_wall">
+      <static>true</static>
+      <pose>-10 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.5 20 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.5 20 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+    </model>
+    <model name="top_wall">
+      <static>true</static>
+      <pose>0 10 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>20 0.5 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>20 0.5 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+    </model>
+    <model name="bottom_wall">
+      <static>true</static>
+      <pose>0 -10 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>20 0.5 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>20 0.5 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+    </model>
+
+    <model name="hardlibobs_174">
+      <pose>-10.0000 2.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 -10.0000 2.0000 0.5000</waypoint>
+        <waypoint>4.3400 -8.0000 -6.0000 0.5000</waypoint>
+        <waypoint>4.5500 -7.7800 -6.3300 0.5000</waypoint>
+        <waypoint>5.7900 -5.5600 -6.1000 0.5000</waypoint>
+        <waypoint>7.6500 -3.3300 -3.3600 0.5000</waypoint>
+        <waypoint>7.9100 -3.0000 -3.0000 0.5000</waypoint>
+        <waypoint>9.0300 -1.1100 -1.9900 0.5000</waypoint>
+        <waypoint>9.0900 -1.0000 -2.0000 0.5000</waypoint>
+        <waypoint>10.6100 1.1100 -3.7300 0.5000</waypoint>
+        <waypoint>13.3600 3.3300 -8.1600 0.5000</waypoint>
+        <waypoint>18.5100 10.0000 -1.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="mediumlibobs_154">
+      <pose>-8.8400 10.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 -8.8400 10.0000 0.5000</waypoint>
+        <waypoint>12.5000 1.1100 -2.8500 0.5000</waypoint>
+        <waypoint>19.3400 2.0000 6.0000 0.5000</waypoint>
+        <waypoint>24.1300 8.0000 9.0000 0.5000</waypoint>
+        <waypoint>39.1600 9.0000 -6.0000 0.5000</waypoint>
+        <waypoint>42.0200 9.1000 -10.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_187">
+      <pose>-5.7200 -10.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 -5.7200 -10.0000 0.5000</waypoint>
+        <waypoint>9.7700 8.0000 1.0000 0.5000</waypoint>
+        <waypoint>17.5600 -1.1100 9.5100 0.5000</waypoint>
+        <waypoint>19.2300 -2.0000 7.0000 0.5000</waypoint>
+        <waypoint>20.0500 -3.3300 6.5600 0.5000</waypoint>
+        <waypoint>21.2600 -5.0000 5.0000 0.5000</waypoint>
+        <waypoint>23.1500 -5.5600 2.0300 0.5000</waypoint>
+        <waypoint>25.8500 -6.0000 -2.0000 0.5000</waypoint>
+        <waypoint>33.4900 -1.0000 10.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_133">
+      <pose>10.0000 -9.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 10.0000 -9.0000 0.5000</waypoint>
+        <waypoint>2.5900 5.5600 -7.6200 0.5000</waypoint>
+        <waypoint>4.2800 4.0000 -5.0000 0.5000</waypoint>
+        <waypoint>4.7800 3.3300 -4.4600 0.5000</waypoint>
+        <waypoint>5.9800 1.1100 -4.9200 0.5000</waypoint>
+        <waypoint>6.0500 1.0000 -5.0000 0.5000</waypoint>
+        <waypoint>7.3900 -1.1100 -6.4300 0.5000</waypoint>
+        <waypoint>8.4700 -3.0000 -6.0000 0.5000</waypoint>
+        <waypoint>8.7200 -3.3300 -5.6700 0.5000</waypoint>
+        <waypoint>10.8900 -5.5600 -2.1900 0.5000</waypoint>
+        <waypoint>11.8800 -7.0000 -1.0000 0.5000</waypoint>
+        <waypoint>12.6400 -7.7800 -2.1400 0.5000</waypoint>
+        <waypoint>16.3100 -9.0000 -9.0000 0.5000</waypoint>
+        <waypoint>26.3100 10.0000 -9.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_55">
+      <pose>9.7800 -10.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 9.7800 -10.0000 0.5000</waypoint>
+        <waypoint>10.2500 7.7800 7.3000 0.5000</waypoint>
+        <waypoint>10.7100 7.0000 7.0000 0.5000</waypoint>
+        <waypoint>13.8200 5.5600 1.9100 0.5000</waypoint>
+        <waypoint>17.5500 4.0000 -5.0000 0.5000</waypoint>
+        <waypoint>18.9100 3.3300 -7.3600 0.5000</waypoint>
+        <waypoint>21.7200 -1.1100 -4.9300 0.5000</waypoint>
+        <waypoint>26.7100 -3.3300 3.2500 0.5000</waypoint>
+        <waypoint>28.9900 -5.0000 7.0000 0.5000</waypoint>
+        <waypoint>29.3100 -5.5600 7.1900 0.5000</waypoint>
+        <waypoint>33.0700 -7.7800 0.4100 0.5000</waypoint>
+        <waypoint>33.8600 -8.0000 -1.0000 0.5000</waypoint>
+        <waypoint>38.1000 -9.0000 -9.0000 0.5000</waypoint>
+        <waypoint>38.7300 -9.1100 -10.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_117">
+      <pose>10.0000 -6.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 10.0000 -6.0000 0.5000</waypoint>
+        <waypoint>7.3600 9.0000 5.0000 0.5000</waypoint>
+        <waypoint>9.6400 7.7800 1.3200 0.5000</waypoint>
+        <waypoint>10.9500 5.5600 1.2400 0.5000</waypoint>
+        <waypoint>13.9900 4.0000 -4.0000 0.5000</waypoint>
+        <waypoint>15.4500 3.3300 -6.7100 0.5000</waypoint>
+        <waypoint>16.2400 3.0000 -8.0000 0.5000</waypoint>
+        <waypoint>20.0300 -1.0000 -2.0000 0.5000</waypoint>
+        <waypoint>20.6500 -1.1100 -0.8900 0.5000</waypoint>
+        <waypoint>28.2100 9.0000 -10.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_181">
+      <pose>6.0000 10.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 6.0000 10.0000 0.5000</waypoint>
+        <waypoint>1.7300 5.5600 7.0900 0.5000</waypoint>
+        <waypoint>8.1100 4.0000 -3.0000 0.5000</waypoint>
+        <waypoint>12.1100 4.0000 3.0000 0.5000</waypoint>
+        <waypoint>14.6100 4.0000 -1.0000 0.5000</waypoint>
+        <waypoint>15.4500 3.3300 -2.4500 0.5000</waypoint>
+        <waypoint>17.9800 1.1100 -6.4200 0.5000</waypoint>
+        <waypoint>19.5700 -1.1100 -7.6700 0.5000</waypoint>
+        <waypoint>20.8800 -3.3300 -7.8700 0.5000</waypoint>
+        <waypoint>22.2100 -5.5600 -7.5400 0.5000</waypoint>
+        <waypoint>23.6300 -7.7800 -5.9900 0.5000</waypoint>
+        <waypoint>24.9300 -9.0000 -4.0000 0.5000</waypoint>
+        <waypoint>26.5800 -10.0000 -1.3800 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="mediumlibobs_174">
+      <pose>-10.0000 -5.2700 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 -10.0000 -5.2700 0.5000</waypoint>
+        <waypoint>14.3200 4.0000 7.0000 0.5000</waypoint>
+        <waypoint>20.6600 3.3300 -1.8500 0.5000</waypoint>
+        <waypoint>22.3500 1.1100 -2.6700 0.5000</waypoint>
+        <waypoint>26.4800 0.0000 3.0000 0.5000</waypoint>
+        <waypoint>29.4200 -1.0000 7.0000 0.5000</waypoint>
+        <waypoint>29.6700 -1.1100 7.2900 0.5000</waypoint>
+        <waypoint>31.4300 -3.0000 6.0000 0.5000</waypoint>
+        <waypoint>32.5000 -3.3300 4.5300 0.5000</waypoint>
+        <waypoint>38.0600 -9.0000 9.0000 0.5000</waypoint>
+        <waypoint>55.6100 10.0000 -6.5800 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_10">
+      <pose>10.0000 6.5000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 10.0000 6.5000 0.5000</waypoint>
+        <waypoint>8.5700 -3.3300 9.7200 0.5000</waypoint>
+        <waypoint>9.6000 -3.0000 8.0000 0.5000</waypoint>
+        <waypoint>14.5200 -1.1100 0.3700 0.5000</waypoint>
+        <waypoint>15.7500 0.0000 2.0000 0.5000</waypoint>
+        <waypoint>21.3700 0.0000 -7.0000 0.5000</waypoint>
+        <waypoint>23.0400 1.1100 -4.2100 0.5000</waypoint>
+        <waypoint>24.4300 3.3300 -4.3400 0.5000</waypoint>
+        <waypoint>26.0300 5.0000 -2.0000 0.5000</waypoint>
+        <waypoint>26.8100 5.5600 -0.8900 0.5000</waypoint>
+        <waypoint>30.4300 7.7800 4.0700 0.5000</waypoint>
+        <waypoint>34.6500 10.0000 10.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_148">
+      <pose>-2.0500 -10.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 -2.0500 -10.0000 0.5000</waypoint>
+        <waypoint>0.5300 -2.0000 -9.0000 0.5000</waypoint>
+        <waypoint>7.7700 -1.1100 3.2800 0.5000</waypoint>
+        <waypoint>8.2000 -1.0000 4.0000 0.5000</waypoint>
+        <waypoint>13.5700 1.0000 -6.0000 0.5000</waypoint>
+        <waypoint>14.3300 1.1100 -7.4600 0.5000</waypoint>
+        <waypoint>19.7600 6.0000 1.0000 0.5000</waypoint>
+        <waypoint>23.1000 6.0000 -5.0000 0.5000</waypoint>
+        <waypoint>25.7300 5.8100 -10.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_80">
+      <pose>-2.8500 -10.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 -2.8500 -10.0000 0.5000</waypoint>
+        <waypoint>2.6900 -7.0000 -7.0000 0.5000</waypoint>
+        <waypoint>3.2500 -7.0000 -8.0000 0.5000</waypoint>
+        <waypoint>8.5800 -6.0000 1.0000 0.5000</waypoint>
+        <waypoint>9.9700 -5.5600 3.4600 0.5000</waypoint>
+        <waypoint>12.6800 -3.3300 6.8800 0.5000</waypoint>
+        <waypoint>16.3400 -1.1100 1.8700 0.5000</waypoint>
+        <waypoint>20.8600 1.1100 -4.5300 0.5000</waypoint>
+        <waypoint>23.1000 3.3300 -7.3500 0.5000</waypoint>
+        <waypoint>23.5400 4.0000 -7.0000 0.5000</waypoint>
+        <waypoint>26.0100 5.5600 -3.6400 0.5000</waypoint>
+        <waypoint>26.9000 6.0000 -2.0000 0.5000</waypoint>
+        <waypoint>32.9300 7.7800 7.4900 0.5000</waypoint>
+        <waypoint>46.3600 -8.9000 -10.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="hardlibobs_58">
+      <pose>10.0000 1.1600 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 10.0000 1.1600 0.5000</waypoint>
+        <waypoint>6.2300 4.0000 -6.0000 0.5000</waypoint>
+        <waypoint>7.7100 3.3300 -3.8800 0.5000</waypoint>
+        <waypoint>9.8900 1.1100 -0.9300 0.5000</waypoint>
+        <waypoint>12.8600 -1.0000 3.0000 0.5000</waypoint>
+        <waypoint>17.5200 -1.0000 -4.0000 0.5000</waypoint>
+        <waypoint>19.8600 -1.1100 -0.5000 0.5000</waypoint>
+        <waypoint>22.7300 -3.0000 4.0000 0.5000</waypoint>
+        <waypoint>29.4000 -3.0000 -6.0000 0.5000</waypoint>
+        <waypoint>32.3700 -3.3300 -1.2600 0.5000</waypoint>
+        <waypoint>35.7900 -5.5600 -6.2700 0.5000</waypoint>
+        <waypoint>50.2800 10.0000 8.9100 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="mediumlibobs_95">
+      <pose>10.0000 -8.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 10.0000 -8.0000 0.5000</waypoint>
+        <waypoint>1.8600 9.0000 -6.0000 0.5000</waypoint>
+        <waypoint>2.6300 9.0000 -5.0000 0.5000</waypoint>
+        <waypoint>19.0100 -10.0000 -10.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="mediumlibobs_155">
+      <pose>-9.2200 -10.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 -9.2200 -10.0000 0.5000</waypoint>
+        <waypoint>0.7900 -9.0000 -9.0000 0.5000</waypoint>
+        <waypoint>4.3400 -7.7800 -4.1700 0.5000</waypoint>
+        <waypoint>8.9000 -6.0000 1.0000 0.5000</waypoint>
+        <waypoint>9.6700 -5.5600 1.9800 0.5000</waypoint>
+        <waypoint>12.4700 -3.3300 5.2000 0.5000</waypoint>
+        <waypoint>14.1600 -1.1100 6.0200 0.5000</waypoint>
+        <waypoint>15.9200 1.1100 4.9700 0.5000</waypoint>
+        <waypoint>17.8700 3.0000 3.0000 0.5000</waypoint>
+        <waypoint>18.2800 3.3300 2.5800 0.5000</waypoint>
+        <waypoint>21.2900 5.5600 -0.6400 0.5000</waypoint>
+        <waypoint>24.2500 7.7800 -4.1400 0.5000</waypoint>
+        <waypoint>25.8400 9.0000 -6.0000 0.5000</waypoint>
+        <waypoint>27.0700 10.0000 -7.4000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="mediumlibobs_181">
+      <pose>10.0000 0.0200 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 10.0000 0.0200 0.5000</waypoint>
+        <waypoint>2.4500 9.0000 -3.0000 0.5000</waypoint>
+        <waypoint>5.3200 7.7800 -6.2200 0.5000</waypoint>
+        <waypoint>6.7100 7.0000 -8.0000 0.5000</waypoint>
+        <waypoint>17.3500 -7.7800 -9.9500 0.5000</waypoint>
+        <waypoint>19.0000 -9.0000 -8.0000 0.5000</waypoint>
+        <waypoint>20.4400 -10.0000 -6.2400 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="mediumlibobs_58">
+      <pose>-2.5600 -10.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.458333</ixx><iyy>1.458333</iyy><izz>1.250000</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.5</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>true</loop>
+        <interpolation>spline</interpolation>
+        <waypoint>0.0000 -2.5600 -10.0000 0.5000</waypoint>
+        <waypoint>11.7900 -5.5600 2.6200 0.5000</waypoint>
+        <waypoint>19.9300 -3.3300 -8.5500 0.5000</waypoint>
+        <waypoint>24.5000 1.0000 -6.0000 0.5000</waypoint>
+        <waypoint>24.7300 1.1100 -5.6900 0.5000</waypoint>
+        <waypoint>29.8100 3.3300 1.0600 0.5000</waypoint>
+        <waypoint>31.2700 4.0000 3.0000 0.5000</waypoint>
+        <waypoint>34.0200 5.5600 6.5200 0.5000</waypoint>
+        <waypoint>35.7800 7.7800 7.0400 0.5000</waypoint>
+        <waypoint>42.7300 10.0000 -1.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+  </world>
+</sdf>
