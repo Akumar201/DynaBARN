@@ -41,6 +41,9 @@ if TYPE_CHECKING:
     from .sim import MujocoSimulation
 
 _EPS = 1e-9
+# geom groups the lidar sees: all but group 3, where obstacles with a custom look
+# (e.g. a Microduck) keep their invisible collision box; the lidar sees the real shape
+_LIDAR_GROUPS = np.array([1, 1, 1, 0, 1, 1], dtype=np.uint8)
 
 
 def _quat_from_mat(mat: np.ndarray) -> tuple[float, float, float, float]:
@@ -121,7 +124,7 @@ class LidarSensor(SiteMounted):
         pos = sim.data.site_xpos[self.site].copy()
         vec = (self.local @ sim.data.site_xmat[self.site].reshape(3, 3).T).reshape(-1)
         n = s.samples
-        args = (sim.model, sim.data, pos, vec, None, 1, sim.root, self.geom, self.dist)
+        args = (sim.model, sim.data, pos, vec, _LIDAR_GROUPS, 1, sim.root, self.geom, self.dist)
         try:
             mujoco.mj_multiRay(*args, None, n, s.range_max)  # MuJoCo >= 3.3 (normals argument)
         except TypeError:

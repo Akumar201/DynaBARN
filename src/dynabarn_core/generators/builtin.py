@@ -241,7 +241,9 @@ class RandomGenerator(Generator):
             for _ in range(tries):
                 sub = random.Random(rng.random())
                 ok = lambda p: bool(fs.is_free([p], rr)[0])  # noqa: E731
-                path = self._bounce_path(sub, region) if c.bounce else self._random_path(sub, region, ok)
+                leg = lambda a, b: fs.path_free([a, b], rr)  # noqa: E731
+                path = (self._bounce_path(sub, region, ok, leg) if c.bounce
+                        else self._random_path(sub, region, ok, leg))
                 if path is None:
                     break  # region has (almost) no free space
                 if c.stagger_phase and len(trajs) % 2 == 1:
@@ -281,41 +283,68 @@ class RandomGenerator(Generator):
         fs, rr = self.free_space(), self.obstacle_radius + c.static_clearance
         return [q for q in rects if fs.free_fraction(*q, rr, n=6) > 0]
 
-    def _random_path(self, rng: random.Random, region, ok) -> list[tuple[float, float]] | None:
+    def _random_path(self, rng: random.Random, region, ok, leg) -> list[tuple[float, float]] | None:
+        """Random waypoints in ``region``; each must be free and reachable in a
+        straight free line from the previous one."""
         x0, x1, y0, y1 = region
-        pts = []
+        pts: list[tuple[float, float]] = []
         for _ in range(max(2, self.config.points)):
             for _attempt in range(50):
                 p = (rng.uniform(x0, x1), rng.uniform(y0, y1))
-                if ok(p):
+                if ok(p) and (not pts or leg(pts[-1], p)):
                     break
             else:
+                if len(pts) >= 2:
+                    break  # boxed in: keep the waypoints found so far
                 return None
             pts.append(p)
-        return _dedupe(pts + [pts[0]])
+        return _close(pts, leg)
 
-    def _bounce_path(self, rng: random.Random, region) -> list[tuple[float, float]]:
+    def _bounce_path(self, rng: random.Random, region, ok, leg) -> list[tuple[float, float]] | None:
+        """Random walk that reflects off the region's edges and turns away
+        from walls and other static objects."""
         x0, x1, y0, y1 = region
-        x, y = rng.uniform(x0, x1), rng.uniform(y0, y1)
+        for _attempt in range(50):
+            x, y = rng.uniform(x0, x1), rng.uniform(y0, y1)
+            if ok((x, y)):
+                break
+        else:
+            return None
         ang = rng.uniform(-math.pi, math.pi)
         step = max((x1 - x0 + y1 - y0) / 30.0, 0.05)
         pts = [(x, y)]
         for _ in range(max(2, self.config.points) - 1):
-            x += step * math.cos(ang)
-            y += step * math.sin(ang)
-            bounced = False
-            if x < x0:
-                x, ang, bounced = 2 * x0 - x, math.pi - ang, True
-            if x > x1:
-                x, ang, bounced = 2 * x1 - x, math.pi - ang, True
-            if y < y0:
-                y, ang, bounced = 2 * y0 - y, -ang, True
-            if y > y1:
-                y, ang, bounced = 2 * y1 - y, -ang, True
+            for _turn in range(12):
+                nx, ny, nang = x + step * math.cos(ang), y + step * math.sin(ang), ang
+                bounced = False
+                if nx < x0:
+                    nx, nang, bounced = 2 * x0 - nx, math.pi - nang, True
+                if nx > x1:
+                    nx, nang, bounced = 2 * x1 - nx, math.pi - nang, True
+                if ny < y0:
+                    ny, nang, bounced = 2 * y0 - ny, -nang, True
+                if ny > y1:
+                    ny, nang, bounced = 2 * y1 - ny, -nang, True
+                if leg((x, y), (nx, ny)):
+                    break
+                ang = rng.uniform(-math.pi, math.pi)  # blocked by a wall: try another direction
+            else:
+                break  # boxed in: end the walk here
+            x, y, ang = nx, ny, nang
             if not bounced:
                 ang += rng.uniform(-0.35, 0.35)
             pts.append((x, y))
+        if len(pts) < 2:
+            return None
+        return _close(pts, leg)
+
+
+def _close(pts: list[tuple[float, float]], leg) -> list[tuple[float, float]]:
+    """Close the loop back to the start if that leg is free; otherwise retrace
+    the route (out and back), which only uses legs already known to be free."""
+    if leg(pts[-1], pts[0]):
         return _dedupe(pts + [pts[0]])
+    return _dedupe(pts + pts[-2::-1])
 
 
 def _linspace(a: float, b: float, n: int) -> list[float]:

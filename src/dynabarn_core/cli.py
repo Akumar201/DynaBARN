@@ -117,6 +117,16 @@ def _can(path: Path, importer: str) -> bool:
     return WORLD_IMPORTERS.get(importer).can_import(path)
 
 
+def cmd_assets_import_microduck(args, assets: AssetLibrary) -> int:
+    from .importers.microduck import build_microduck
+
+    folder = build_microduck(args.source, args.output, scale=args.scale, pose=args.pose, asset_id=args.id)
+    print(f"wrote {folder}")
+    print("Meshes are CC BY-NC-SA 4.0 (Pollen Robotics): non-commercial use only, see NOTICE.md there.")
+    print(f"Use it with: dynabarn --assets {args.output} generate ... -s obstacle_asset={args.id}")
+    return 0
+
+
 def cmd_options(args, assets: AssetLibrary) -> int:
     import dataclasses
 
@@ -207,6 +217,14 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("dest", help="your asset folder, e.g. ./my_assets")
     a.add_argument("--as", dest="new_id", help="give the copy a new id instead of overriding the original")
     a.set_defaults(func=cmd_assets_copy)
+    a = asub.add_parser("import-microduck",
+                        help="build a Microduck obstacle from a clone of pollen-robotics/microduck_rl")
+    a.add_argument("source", help="the clone (or its src/mjlab_microduck/robot/microduck folder)")
+    a.add_argument("-o", "--output", required=True, help="asset folder to write into")
+    a.add_argument("--scale", type=float, default=1.0, help="size factor (1 = real ~27 cm tall duck)")
+    a.add_argument("--pose", default="STAND", help="keyframe of scene_walk.xml to freeze the duck in")
+    a.add_argument("--id", default="microduck", help="asset id")
+    a.set_defaults(func=cmd_assets_import_microduck)
 
     s = sub.add_parser("import-world", help="import worlds from other tools (SDF, world-collection) as assets")
     s.add_argument("paths", nargs="+", help="world file/folder(s), or a folder containing world folders")

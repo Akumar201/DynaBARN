@@ -7,6 +7,7 @@ the start pose.
 """
 from __future__ import annotations
 
+import copy
 import shutil
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -22,6 +23,7 @@ STATIC_PREFIX = "static:"  # walls and every other fixed environment object
 GROUND = "ground"
 ROBOT_DEFAULT_CLASS = "dynabarn_robot"
 IMU_SITE = "dynabarn_imu"
+HIDDEN_GROUP = 3  # collision stand-ins for obstacles with a custom look: not drawn, not seen by the lidar
 GYRO_SENSOR = "dynabarn_gyro"
 ACCEL_SENSOR = "dynabarn_accel"
 # sections of the robot file merged into the scene, in MJCF order
@@ -94,6 +96,7 @@ class MujocoExporter(Exporter):
             else:
                 ET.SubElement(world, "geom", name=name, rgba=_rgba(o.color), **pose, **geom_attrs(o.shape))
 
+        fragments: dict[str, list[ET.Element]] = {}
         for ob in scenario.obstacles:
             a = self.assets.obstacle(ob.asset)
             p = ob.trajectory.pose_at(0.0)
@@ -101,8 +104,19 @@ class MujocoExporter(Exporter):
                 world, "body", name=OBSTACLE_PREFIX + ob.id, mocap="true",
                 pos=_f(p.x, p.y, a.geometry.half_height), quat=_f(*yaw_to_quat_wxyz(p.yaw)),
             )
+            rep = a.representation(self.backend.name)
+            if rep is None:
+                ET.SubElement(body, "geom", name=OBSTACLE_PREFIX + ob.id, rgba=_rgba(a.color),
+                              **geom_attrs(a.geometry))
+                continue
+            # custom look (e.g. a Microduck): the asset geometry stays the collision
+            # shape, hidden in group 3; the model's own geoms are drawn on top
+            if a.id not in fragments:
+                fragments[a.id] = self._load_fragment(a.id, rep.path, asset)
             ET.SubElement(body, "geom", name=OBSTACLE_PREFIX + ob.id, rgba=_rgba(a.color),
-                          **geom_attrs(a.geometry))
+                          group=str(HIDDEN_GROUP), **geom_attrs(a.geometry))
+            for g in fragments[a.id]:
+                body.append(copy.deepcopy(g))
 
         if scenario.environment_obstacles:
             taken = {o.id for o in scenario.obstacles}
@@ -136,6 +150,39 @@ class MujocoExporter(Exporter):
                          scenario=scenario_file)
 
     # ------------------------------------------------------------------
+    def _load_fragment(self, asset_id: str, path: Path, asset_section: ET.Element) -> list[ET.Element]:
+        """Read an obstacle's MJCF fragment (``<asset>`` + ``<worldbody>`` geoms,
+        in the obstacle's frame). Its meshes and materials are added to the scene
+        once, renamed ``<asset id>/<name>``; returns the geoms to attach to each body."""
+        frag = ET.parse(path).getroot()
+        comp = frag.find("compiler")
+        meshdir = path.parent / (comp.get("meshdir", "") if comp is not None else "")
+        renames: dict[str, str] = {}
+        for el in (frag.find("asset") if frag.find("asset") is not None else []):
+            el = copy.deepcopy(el)
+            name = el.get("name") or (Path(el.get("file", "")).stem if el.get("file") else None)
+            if name is None:
+                raise BackendError(f"{path}: unnamed <{el.tag}> in <asset>")
+            renames[name] = f"{asset_id}/{name}"
+            el.set("name", renames[name])
+            if el.get("file"):
+                el.set("file", str((meshdir / el.get("file")).resolve()))
+            asset_section.append(el)
+        geoms = []
+        wb = frag.find("worldbody")
+        for g in (wb.findall("geom") if wb is not None else []):
+            g = copy.deepcopy(g)
+            g.attrib.pop("name", None)
+            for ref in ("mesh", "material"):
+                if g.get(ref) in renames:
+                    g.set(ref, renames[g.get(ref)])
+            g.set("contype", "0")
+            g.set("conaffinity", "0")
+            geoms.append(g)
+        if not geoms:
+            raise BackendError(f"{path}: no <geom> elements in <worldbody>")
+        return geoms
+
     def _merge_robot(self, robot: RobotAsset, scenario: Scenario, compiler: ET.Element,
                      sections: dict[str, ET.Element]) -> None:
         rep = robot.require(self.backend.name)

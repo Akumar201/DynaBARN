@@ -1,21 +1,28 @@
 # dynabarn-core
 
-A Python package for [DynaBARN](https://cs.gmu.edu/~xxiao2/Research/DynaBARN/DynaBARN.html)-style navigation among moving obstacles. It generates scenarios, simulates them in **MuJoCo** (the default), and streams the robot's sensors. It's meant as the base for DynaBARN projects such as ROS 2 nodes, learning setups and benchmarks: they `pip install dynabarn-core` and use `DynaBarn.get(...)` / `set_command(...)`, without any ROS or simulator code living in this package.
+A Python package for [DynaBARN](https://cs.gmu.edu/~xxiao2/Research/DynaBARN/DynaBARN.html)-style robot navigation among moving obstacles. It generates scenarios, simulates them in **MuJoCo** (the default) and streams the robot's sensors. It's meant as the base for DynaBARN projects such as ROS 2 nodes, learning setups and benchmarks: they `pip install dynabarn-core` and call `DynaBarn.get(...)` / `set_command(...)`. No ROS or simulator code lives in this package's core.
 
-```python
-from dynabarn_core import DynaBarn
+<p align="center">
+  <img src="docs/images/microducks_lanes.jpg" width="820" alt="A TurtleBot3 Burger driving between two rows of Microduck robots walking along lanes">
+  <br><sub>A TurtleBot3 Burger among <a href="#microducks-as-obstacles">Microducks</a> walking their lanes (<code>burger_lanes</code> preset, <code>obstacle_asset=microduck</code>).
+  Microduck model © Pollen Robotics, CC BY-NC-SA 4.0.</sub>
+</p>
 
-db = DynaBarn.from_preset("burger_lanes", seed=1).start()   # simulation runs in the background
-db.set_command(0.15, 0.0)
-imu, scan = db.get("imu"), db.get_data("lidar")
-```
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/jackal_dynabarn_lanes.jpg" width="400" alt="Jackal in the 20 m DynaBARN arena with 36 red cylinders in lanes"><br><sub>Jackal in the standard DynaBARN arena (<code>dynabarn_lanes</code>)</sub></td>
+    <td align="center"><img src="docs/images/mo2_warehouse.jpg" width="400" alt="Warehouse with racks and 28 moving carts and boxes"><br><sub>Imported world-collection warehouse with its 28 moving carts (<code>MO2</code>)</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/imported_map_random.jpg" width="400" alt="Top-down office floor plan with red obstacles placed only in free space"><br><sub>Our random obstacles placed only where they fit, in an imported office (<code>P1</code>)</sub></td>
+    <td align="center"><img src="docs/images/robot_cameras.jpg" width="400" alt="Robot RGB and depth camera images showing Microducks"><br><sub>What the robot sees: RGB and depth cameras</sub></td>
+  </tr>
+</table>
 
 | Simulator backend | Status |
 | --- | --- |
 | MuJoCo | Default. Export to MJCF and in-process simulation with lidar, IMU, odometry, joint states, contacts and cameras |
-| gz-sim (modern Gazebo), Isaac Sim | Not yet; they plug in as backends (see "Adding a simulator") |
-
-The scenario, asset and generator layers have no simulator or ROS imports, so they work the same on every ROS 2 distro.
+| gz-sim (modern Gazebo), Isaac Sim | Not yet; they plug in as backends (see [Adding a simulator](#adding-a-simulator)) |
 
 ## Quick start
 
@@ -28,44 +35,33 @@ dynabarn generate --preset burger_lanes --seed 7 -o out/burger.yaml          # f
 dynabarn generate lanes -s lanes=7 -s count=28 --seed 7 -o out/lanes.yaml    # or set options yourself
 dynabarn view out/lanes.yaml --linear 0.5       # on-screen viewer; drive with the arrow keys
 dynabarn run out/lanes.yaml --linear 0.5 --duration 60   # headless smoke run
-dynabarn export out/lanes.yaml -b mujoco -o out/mujoco   # just write scene.xml
 pytest
 ```
 
-Lower-level Python API, for stepping a simulation yourself:
-
-```python
-from dynabarn_core import create_generator, create_backend, VelocityCommand
-
-scenario = create_generator("lanes", lanes=6, count=36, speed=1.2).build(seed=7)
-backend = create_backend("mujoco")
-artifacts = backend.export(scenario, "out/mujoco")
-
-with backend.create_simulation(artifacts, control_hz=20) as sim:
-    obs = sim.reset()
-    while obs.time < 60 and not obs.in_collision:
-        obs = sim.step(VelocityCommand(linear=0.2, angular=0.0))
-    print(obs.pose, obs.scan.ranges[0], obs.contacts)
-```
-
-## Running a scenario: `DynaBarn`
-
-`DynaBarn` runs a scenario in a **background thread, in real time**. Your code reads any sensor's latest value whenever it likes and sends velocity commands. Nothing waits on anything else:
+In Python:
 
 ```python
 from dynabarn_core import DynaBarn
 
-db = DynaBarn.from_preset("burger_lanes", seed=1)   # or DynaBarn("my_scenario.yaml")
-db.start()
-
-db.set_command(0.15, 0.0)          # m/s, rad/s
-imu  = db.get("imu")               # SensorReading: .data (Imu), .stamp (sim time), .frame
-scan = db.get_data("lidar")        # just the payload (LaserScan)
-odom = db.get_data("odom")         # Odometry in the odom frame (starts at 0, 0, 0)
+db = DynaBarn.from_preset("burger_lanes", seed=1).start()   # simulation runs in the background
+db.set_command(0.15, 0.0)                                    # m/s, rad/s
+imu, scan = db.get("imu"), db.get_data("lidar")
 db.stop()
 ```
 
-The background thread advances physics in slices no longer than the fastest enabled sensor's period. So `get("imu")` really delivers a fresh 200 Hz sample every 5 ms, measured as 401 samples in 2 s.
+## Running a scenario: `DynaBarn`
+
+`DynaBarn` runs a scenario in a **background thread, in real time**. Your code reads the latest value of any sensor whenever it likes and sends velocity commands. Nothing waits on anything else.
+
+```python
+db = DynaBarn.from_preset("burger_lanes", seed=1)   # or DynaBarn("my_scenario.yaml")
+db.start()
+imu  = db.get("imu")               # SensorReading: .data (Imu), .stamp (sim time), .frame
+scan = db.get_data("lidar")        # just the payload (LaserScan)
+odom = db.get_data("odom")         # Odometry in the odom frame (starts at 0, 0, 0)
+```
+
+The thread advances physics in slices no longer than the fastest enabled sensor's period, so `get("imu")` really delivers a fresh 200 Hz sample every 5 ms (measured: 401 samples in 2 s).
 
 | Getters | |
 | --- | --- |
@@ -84,11 +80,14 @@ The background thread advances physics in slices no longer than the fastest enab
 | `start()`, `stop()`, `pause()`, `resume()`, `reset()` | |
 | `step(command)` | Synchronous stepping instead of the thread, e.g. for RL or tests |
 
-Options: `DynaBarn(..., realtime=1.0)` (`2.0` runs twice as fast, `None` as fast as possible). `command_timeout=0.5` stops the robot when commands stop arriving. Sensor overrides: `enable=["rgb"], disable=["imu"]`, `seed=...` (noise), `control_hz=...`.
+Options:
+- **Speed:** `DynaBarn(..., realtime=1.0)`. `2.0` runs twice as fast; `None` runs as fast as possible.
+- **Safety stop:** `command_timeout=0.5` stops the robot when commands stop arriving.
+- **Sensors and noise:** `enable=["rgb"]`, `disable=["imu"]`, `seed=...` (for sensor noise), `control_hz=...`.
 
 ### Sensors
 
-Each robot's `asset.yaml` lists its sensors. **Realistic extras are off by default**; switch them on in the YAML or at runtime:
+Each robot's `asset.yaml` lists its sensors. **Realistic extras are off by default**; switch them on in the YAML or at runtime.
 
 ```yaml
 sensors:
@@ -149,74 +148,61 @@ class DynaBarnNode(Node):
 
 `sensors()` gives each sensor's mount pose, which is what a static TF broadcaster needs.
 
-## Robots and scale
+## Scenarios
 
-DynaBARN's arena and obstacles were designed for the Clearpath Jackal, so the generator defaults are a Jackal in the 20 x 20 m arena. For the much smaller TurtleBot3 Burger, use the `burger_*` presets: an 8 x 8 m arena with 0.1 m obstacles, scaled by the robots' size ratio (about 0.4).
+A scenario is a YAML file with an environment, a robot with its start and goal, and moving obstacles with their trajectories. Generators make them:
+
+| Generator | Obstacles |
+| --- | --- |
+| `lanes` | Shuttle back and forth along evenly spaced lanes (`axis=row` or `column`) |
+| `random` | Random loops: waypoints, or a bouncing walk (`bounce=true`) |
+| `empty` | None: just the environment, e.g. an imported world with its own moving objects |
+
+Common options (see `dynabarn options <generator>`):
+- **Size and speed:** `count`; `speed`, or `speed_mode=agent|segment` with `speed_min`/`speed_max`; `dwell`; `stagger_phase`.
+- **What goes in the world:** `obstacle_asset`, `robot_asset`, `environment`.
+- **Start and goal:** `start_x/y/yaw`, or `spawn=S1` for one of the environment's own start poses; `goal_x/y`.
+- **Where obstacles may move:** `area`, `keep_clear`, `static_clearance`, `min_clearance` (see below).
+
+### Robots and presets
+
+DynaBARN's arena and obstacles were designed for the Clearpath Jackal, so the generator defaults are a Jackal in the 20 × 20 m arena. For the much smaller TurtleBot3 Burger, use the `burger_*` presets: an 8 × 8 m arena with 0.1 m obstacles, scaled by the robots' size ratio (about 0.4).
 
 | Preset | Robot | Arena | Obstacles |
 | --- | --- | --- | --- |
-| `dynabarn_lanes` | Jackal (0.51 x 0.43 m, skid steer, up to 2 m/s) | 20 x 20 m | 36 x r 0.25 m, 6 lanes, 1 m/s |
-| `dynabarn_random` | Jackal | 20 x 20 m | 36 x r 0.25 m, random walks, 0.5-1.5 m/s |
-| `burger_lanes` | TurtleBot3 Burger (0.21 m, up to 0.22 m/s) | 8 x 8 m | 18 x r 0.1 m, 6 lanes, 0.15 m/s |
-| `burger_random` | TurtleBot3 Burger | 8 x 8 m | 16 x r 0.1 m, random walks, 0.08-0.2 m/s |
+| `dynabarn_lanes` | Jackal (0.51 × 0.43 m, skid steer, up to 2 m/s) | 20 × 20 m | 36 × r 0.25 m, 6 lanes, 1 m/s |
+| `dynabarn_random` | Jackal | 20 × 20 m | 36 × r 0.25 m, random walks, 0.5–1.5 m/s |
+| `burger_lanes` | TurtleBot3 Burger (0.21 m, up to 0.22 m/s) | 8 × 8 m | 18 × r 0.1 m, 6 lanes, 0.15 m/s |
+| `burger_random` | TurtleBot3 Burger | 8 × 8 m | 16 × r 0.1 m, random walks, 0.08–0.2 m/s |
 
 Presets are YAML files in `src/dynabarn_core/data/presets/`. Pass your own with `--preset path/to/file.yaml`, or override any option: `dynabarn generate --preset burger_lanes -s count=24 ...`.
 
-## Obstacles never overlap
+### Where obstacles may go
 
-Moving obstacles follow scripted paths and do not collide with each other in any simulator, so the generators guarantee they never overlap:
+Moving obstacles follow scripted paths and don't collide with each other in any simulator, so the generators decide where they may go:
 
-- `lanes`: obstacles sharing a lane each get their own section of it, with `lane_gap` metres between surfaces.
-- `random`, `layout=cells` (default): the area is split into a grid with one obstacle per cell, and each obstacle moves randomly inside its own cell.
-- `random`, `layout=free`: obstacles roam the whole area, and paths are re-drawn until they keep their distance. This only works for a handful of obstacles, and you get a clear error when it can't fit them.
+- **Inside the area:** `area=bounds` (default) is the `x_min`…`y_max` rectangle. `area=environment` is the environment's free-floor outline, or its extent if it has none.
+- **Away from walls and other static objects:** by at least `static_clearance` (default 0.1 m).
+- **Away from the robot's start and goal:** by at least `keep_clear` (default 0.3 m), measured from the robot's outline, so a robot waiting there is never touched.
+- **Never overlapping each other or the environment's own moving objects:** by at least `min_clearance` (default 0 m), checked over `check_horizon` seconds (default 120 s). `min_clearance=none` allows overlaps, as in the original DynaBARN.
 
-`min_clearance` (default 0 m) adds extra space between obstacle surfaces, checked over `check_horizon` seconds (default 120 s). `min_clearance=none` allows overlaps, as in the original DynaBARN.
+How each generator achieves it:
+- **`lanes`:** each lane is cut into its free stretches. Obstacles sharing a stretch each get their own section of it, `lane_gap` metres apart.
+- **`random`, `layout=cells` (default):** one obstacle per grid cell, moving inside its own cell. Each leg of its path must be free, and it turns away from walls. Cells without usable floor are skipped, and the grid is refined if too few are usable.
+- **`random`, `layout=free`:** obstacles roam the whole area and paths are re-drawn until they keep their distance. This only works for a handful of obstacles.
 
-## Architecture
-
-```
-src/dynabarn_core/
-  core/         Pose2D, Bounds, shapes, trajectories, Scenario, messages, Registry   (no ROS, no simulators)
-  assets/       asset.yaml manifests -> Robot/Obstacle/Environment dataclasses, search path
-  generators/   Scenario generators (lanes, random, empty), free-space queries
-  importers/    world importers (sdf, world_collection)
-  backends/     simulator adapters: SimBackend = Exporter + runtime (Simulation or launch_command)
-    mujoco/     MuJoCo exporter, simulation, sensors, viewer
-  runtime.py    DynaBarn: background thread, get() / set_command()
-  data/assets/  built-in robots, obstacles and environments (shipped in the wheel)
-  data/presets/ built-in presets
-scenarios/      example scenario files
-examples/       using dynabarn from your own code
-```
-
-Each layer depends only on the layers listed above it.
-
-| Pattern | Where | Why |
-| --- | --- | --- |
-| Frozen dataclasses | `core`, `assets` | Plain, immutable, serialisable data |
-| Strategy | `core.trajectories` | New motion types without touching backends |
-| Registry + Factory | `core.registry`; `create_generator`, `create_backend` | Pick implementations by name (CLI, config files) |
-| Entry points | groups `dynabarn_core.backends`, `dynabarn_core.generators`, `dynabarn_core.trajectories`, `dynabarn_core.asset_kinds` | Add a simulator or generator from a separate package |
-| Adapter | `backends/*` | One adapter per simulator, all with the same interface |
-| Template Method | `Generator.build` | Generators only write `make_trajectories` |
-
-Two rules keep the backends interchangeable:
-
-- **Trajectories have a universal export form.** Every trajectory implements `pose_at(t)` and `as_waypoints()`. A simulator that can't call Python at runtime, such as a gz-sim C++ plugin, plays back the waypoints. Backends may also evaluate known types natively.
-- **Simulations speak `core.messages`.** In-process backends implement `Simulation.reset/step/observe` using `VelocityCommand` and `Observation`. Middleware such as ROS 2 or a Gym wrapper converts these types, so simulators never import ROS and ROS code never imports a simulator.
+When something can't fit, generation stops with a message saying what to change. In an open arena everything is free, so the same seed still gives exactly the same scenario as before these rules existed.
 
 ## Assets
 
-Robots, obstacles and environments are **assets**, looked up by `id`. The defaults ship inside the package (`src/dynabarn_core/data/assets/`), so `pip install` includes them. `dynabarn list assets` shows what's available.
-
-You can add or replace assets in three ways. For a given id, the first match in this order wins, so reusing a built-in id overrides it:
+Robots, obstacles and environments are **assets**, looked up by `id`. The defaults ship inside the package (`src/dynabarn_core/data/assets/`); `dynabarn list assets` shows what's available. You can add or replace assets in three ways. For a given id the first match wins, so reusing a built-in id overrides it:
 
 **1. In code**, with no files needed:
 
 ```python
 from dynabarn_core import AssetLibrary
 from dynabarn_core.assets import ObstacleAsset, EnvironmentAsset, Wall
-from dynabarn_core.core import Cylinder, Box
+from dynabarn_core.core import Cylinder
 
 assets = AssetLibrary()
 assets.add(
@@ -224,58 +210,43 @@ assets.add(
     EnvironmentAsset(id="corridor", ground_size=(30, 12),
                      walls=(Wall("left", 0, 5, 0, (24, 0.2, 1)), Wall("right", 0, -5, 0, (24, 0.2, 1)))),
 )
-assets.add_manifest({"id": "cone", "kind": "obstacle", "geometry": {"type": "sphere", "radius": 0.2}})
-
 gen = create_generator("lanes", assets=assets, obstacle_asset="green_barrel")
-backend = create_backend("mujoco", assets)
 ```
 
-**2. A folder of `asset.yaml` files**, passed as `AssetLibrary(["my_assets"])`, `assets.add_folder("my_assets")`, `dynabarn --assets my_assets ...` or `DYNABARN_ASSET_PATH=my_assets`. The easiest start is to copy a built-in asset and edit it:
+**2. A folder of `asset.yaml` files**, passed as `AssetLibrary(["my_assets"])`, `dynabarn --assets my_assets ...` or `DYNABARN_ASSET_PATH=my_assets`. The easiest start is to copy a built-in asset and edit it:
 
 ```bash
 dynabarn assets copy cylinder_small my_assets --as tall_post   # new asset 'tall_post'
-dynabarn assets copy jackal my_assets                          # same id: overrides the built-in jackal
 dynabarn --assets my_assets generate --preset burger_lanes -s obstacle_asset=tall_post -o run.yaml
 ```
 
 **3. The built-in defaults.**
 
-A manifest (`asset.yaml`) looks like this:
-
 ```yaml
 id: cylinder_red
 kind: obstacle                  # robot | obstacle | environment
-geometry: {type: cylinder, radius: 0.25, length: 0.5}
+geometry: {type: cylinder, radius: 0.25, length: 0.5}   # box, cylinder, sphere or polygon
 color: [0.8, 0.1, 0.1, 1.0]
 representations: {}             # optional per-simulator files
 ```
 
-Robots also describe their drive and sensors, plus one `representations` entry per simulator. `bindings` map dynabarn's generic names to the names inside that simulator's file, so you can swap in a different model without changing code. A side can list several motors, as with skid steer:
+Robots also describe their drive and sensors, plus one `representations` entry per simulator. `bindings` map dynabarn's generic names to the names inside that simulator's file, so you can swap in a different model without changing code.
 
-```yaml
-representations:
-  mujoco:
-    path: mujoco/robot.xml       # relative to the asset folder
-    bindings: {root_body: base_link, left_actuator: front_left_vel rear_left_vel,
-               right_actuator: front_right_vel rear_right_vel, lidar_site: base_scan}
+**Obstacles with their own look.** An obstacle can bring its own MuJoCo model: `representations: {mujoco: {format: mjcf_fragment, path: model.xml}}`, a file with `<asset>` and `<worldbody>` geoms in the obstacle's frame. Its `geometry` stays the collision shape (invisible). The lidar and cameras see the model.
+
+### Microducks as obstacles
+
+[Microduck](https://github.com/pollen-robotics/microduck_rl) is Pollen Robotics' ~27 cm bipedal duck robot. `import-microduck` freezes it in its standing pose into one rigid obstacle. It then moves like any other obstacle, facing the way it walks:
+
+```bash
+git clone --depth 1 https://github.com/pollen-robotics/microduck_rl
+dynabarn assets import-microduck microduck_rl -o duck_assets                       # real size, 12 x 14 x 27 cm
+dynabarn assets import-microduck microduck_rl -o duck_assets --scale 2.5 --id microduck_big   # for the Jackal arena
+dynabarn --assets duck_assets generate --preset burger_lanes -s obstacle_asset=microduck -o ducks.yaml
+dynabarn --assets duck_assets view ducks.yaml --linear 0.15
 ```
 
-Scenarios reference assets by id, so the same scenario file works with different asset sets.
-
-## Where obstacles may go
-
-Generators place obstacles only where they fit:
-
-- **Inside the area:** `area=bounds` (default) is the `x_min`…`y_max` rectangle. `area=environment` is the environment's free-floor outline, or its extent if it has none.
-- **Away from walls and other static objects:** by at least `static_clearance` (default 0.1 m).
-- **Away from the robot's start and goal:** by at least `keep_clear` (default 0.3 m), measured from the robot's outline, so a robot waiting there is never touched.
-- **Away from each other and from the environment's own moving objects:** by at least `min_clearance` over `check_horizon` seconds.
-
-Placement by generator:
-- **`lanes`:** each lane is cut into its free stretches, and the lane's obstacles are shared out over them.
-- **`random` (`layout=cells`):** cells with no usable floor are skipped, and the grid is refined when too few cells are usable.
-
-When something can't fit, generation stops with a message saying what to change. In an open arena everything is free, so existing scenarios are unchanged: the same seed gives the same scenario as before.
+**License:** the duck's meshes are **CC BY-NC-SA 4.0** (non-commercial, share-alike). They are never bundled with dynabarn-core. The command copies them from *your* clone into *your* asset folder, with their license and a `NOTICE.md` saying how they were modified. The ducks are posed models, not walking simulations; driving them with a trained Microduck walking policy would be a separate project.
 
 ## Importing worlds from other tools
 
@@ -289,31 +260,26 @@ Worlds made for other tools can be imported as environment assets, which every b
 ```bash
 git clone --depth 1 https://github.com/mertgulerx/world-collection
 dynabarn import-world world-collection/worlds -o wc_assets       # all 43 worlds in about a second
-dynabarn --assets wc_assets list assets
-dynabarn --assets wc_assets generate empty -s environment=wc_sc4_office_strip -s spawn=S2 -o sc4.yaml
-dynabarn --assets wc_assets view sc4.yaml
-```
 
-In Python: `res = import_world("path/to/world")`, then `AssetLibrary().add(res.environment)`, or `write_environment(res, "my_assets")`.
+# a world as it is (its own moving objects included, if any)
+dynabarn --assets wc_assets generate empty -s environment=wc_mo2_warehouse_moving -s spawn=S1 -o mo2.yaml
 
-- **`empty` generator:** just the environment and robot, starting at the world's first spawn unless `spawn=` or `start_x`/`start_y` are given.
-- **The world's own moving objects** (world-collection `MO1`, `MO2`: carts, boxes, pallet trucks) are imported as `moving_objects` with a `path` trajectory and simulated by default. Turn them off with `-s environment_obstacles=false`.
-- **Our generated obstacles inside imported maps:** use `area=environment`. Lanes and random obstacles then only use floor the obstacle can actually reach:
-
-```bash
+# a world with our DynaBARN obstacles added, only where they fit
 dynabarn --assets wc_assets generate random -s environment=wc_p1_racetrack_office -s area=environment \
     -s spawn=S1 -s count=12 -s bounce=true -s points=20 -o p1_dynamic.yaml
 dynabarn --assets wc_assets view p1_dynamic.yaml
 ```
+
+In Python: `res = import_world("path/to/world")`, then `AssetLibrary().add(res.environment)`, or `write_environment(res, "my_assets")`.
+
+- **Their moving objects** (world-collection `MO1`, `MO2`: carts, boxes, pallet trucks) come in as the environment's `moving_objects`, with a `path` trajectory: loop or patrol through waypoints, pauses, turning on the spot, a start offset, integer-nanosecond timing. They're simulated by default; `-s environment_obstacles=false` turns them off.
 - **Concave polygons:** MuJoCo collides meshes as convex hulls, so concave polygons are split into convex prisms automatically.
 
-**The `path` trajectory** implements world-collection's motion rules: loop or patrol through waypoints, a pause per waypoint, turning on the spot, a start offset, and integer-nanosecond timing. On import, every object's cycle length must equal `cycle_ns` and its pose at t = 0 must equal its pose in the SDF; anything that disagrees is reported, not imported.
-
 **Checked against all 43 world-collection worlds:**
-- Every world imports, and object counts match the SDF.
-- At every spawn, both robots start clear of walls and rest on the floor.
-- The free floor area computed from the imported geometry matches the author's measured value to 0.00% in 42 worlds. The 500 m maze differs by 0.14%, from the coarser check grid; the author's tolerance is 2%.
-- All 33 moving objects match the author's cycle lengths to the nanosecond and their SDF start poses. Recomputing the author's "M4" check (closest any two objects get, sampled every 0.1 s over 7,800 s) from our trajectories gives **bit-identical** values for both worlds.
+- **Import:** every world imports, and object counts match the SDF. At every spawn, both robots start clear of walls and rest on the floor.
+- **Geometry:** the free floor area computed from the imported geometry matches the author's measured value to 0.00% in 42 worlds, and 0.14% in the 500 m maze (coarser check grid). The author's tolerance is 2%.
+- **Moving objects:** all 33 match the author's cycle lengths to the nanosecond, and their SDF start poses. Recomputing the author's own "closest any two objects get" check (sampled every 0.1 s over 7,800 s) from our trajectories gives **bit-identical** values.
+- **Our obstacles in their maps:** generating lanes and random obstacles across 42 worlds × both robots (168 cases) gave **162 valid scenarios and 0 violations**. An independent check confirmed that no obstacle touches a wall over 120 s, none overlap each other or the world's own movers, all stay out of the start keep-clear zone, and a robot waiting 60 s at its start in MuJoCo is never touched. The other 6 were refused with a clear message, correctly: lanes that would cross `MO1`/`MO2`'s own carts, and one dead-end lane too short for its obstacles.
 
 ## Using it in your own project
 
@@ -321,14 +287,18 @@ dynabarn --assets wc_assets view p1_dynamic.yaml
 pip install dynabarn-core            # not on PyPI yet: pip install "git+<repo-url>" or pip install /path/to/repo
 ```
 
-[`examples/quickstart.py`](examples/quickstart.py) is a complete example covering custom assets in code, a generated scenario, and a simple controller loop that stops in front of obstacles. It runs headless or with `--view`. The loop is the integration point for your own planner:
+[`examples/quickstart.py`](examples/quickstart.py) is a complete example covering custom assets in code, a generated scenario, and a simple controller loop that stops in front of obstacles. It runs headless or with `--view`. To step a simulation yourself instead of using `DynaBarn`:
 
 ```python
+from dynabarn_core import create_generator, create_backend, VelocityCommand
+
+scenario = create_generator("lanes", lanes=6, count=36, speed=1.2).build(seed=7)
+backend = create_backend("mujoco")
+artifacts = backend.export(scenario, "out/mujoco")
 with backend.create_simulation(artifacts, control_hz=20) as sim:
     obs = sim.reset()
-    while not done:
-        cmd = my_planner(obs.pose, obs.velocity, obs.scan)   # -> VelocityCommand(linear, angular)
-        obs = sim.step(cmd)                                   # obs.contacts lists collisions
+    while obs.time < 60 and not obs.in_collision:
+        obs = sim.step(my_planner(obs.pose, obs.velocity, obs.scan))   # -> VelocityCommand(linear, angular)
 ```
 
 ## Adding a simulator
@@ -344,7 +314,46 @@ with backend.create_simulation(artifacts, control_hz=20) as sim:
 
 `SimBackend.check()` validates a scenario before export and lists any missing assets or representations.
 
+## Architecture
+
+```
+src/dynabarn_core/
+  core/         Pose2D, Bounds, shapes, trajectories, Scenario, messages, Registry   (no ROS, no simulators)
+  assets/       asset.yaml manifests -> Robot/Obstacle/Environment dataclasses, search path
+  generators/   scenario generators (lanes, random, empty), free-space queries
+  importers/    world importers (sdf, world_collection), Microduck asset builder
+  backends/     simulator adapters: SimBackend = Exporter + runtime (Simulation or launch_command)
+    mujoco/     MuJoCo exporter, simulation, sensors, viewer
+  runtime.py    DynaBarn: background thread, get() / set_command()
+  data/assets/  built-in robots, obstacles and environments (shipped in the wheel)
+  data/presets/ built-in presets
+scenarios/      example scenario files
+examples/       using dynabarn from your own code
+docs/images/    README screenshots
+```
+
+Each layer depends only on the layers listed above it.
+
+| Pattern | Where | Why |
+| --- | --- | --- |
+| Frozen dataclasses | `core`, `assets` | Plain, immutable, serialisable data |
+| Strategy | `core.trajectories` | New motion types without touching backends |
+| Registry + Factory | `core.registry`; `create_generator`, `create_backend` | Pick implementations by name (CLI, config files) |
+| Entry points | `dynabarn_core.backends`, `.generators`, `.trajectories`, `.asset_kinds`, `.world_importers` | Add a simulator, generator or importer from a separate package |
+| Adapter | `backends/*`, `importers/*` | One adapter per simulator or source format |
+| Template Method | `Generator.build` | Generators only write `make_trajectories` |
+
+Two rules keep the backends interchangeable:
+- **Trajectories have a universal export form.** Every trajectory implements `pose_at(t)` and `as_waypoints()`. A simulator that can't call Python at runtime, such as a gz-sim C++ plugin, plays back the waypoints.
+- **Simulations speak `core.messages`.** Backends produce `Observation` and `SensorReading` objects and accept `VelocityCommand`. Middleware such as ROS 2 or a Gym wrapper converts these, so simulators never import ROS and ROS code never imports a simulator.
+
 ## Notes
 
-- The MuJoCo robot models use primitive shapes with the real dimensions and masses. The Burger tracks velocity commands to within about 2%. The Jackal is skid steer: in MuJoCo it turns at about 43% of what its physical 0.376 m track predicts, so its `asset.yaml` uses an effective `wheel_separation` of 0.87 m. With that it tracks within about 5%.
-- The original DynaBARN lane generator ran every obstacle in a lane along the same path, so they passed through each other. Its `passes` option is gone because the motion loops forever.
+- **Robot models:** the MuJoCo robots use primitive shapes with the real dimensions and masses. The Burger tracks velocity commands to within about 2%. The Jackal is skid steer: in MuJoCo it turns at about 43% of what its physical 0.376 m track predicts, so its `asset.yaml` uses an effective `wheel_separation` of 0.87 m, which brings tracking within about 5%.
+- **Lane overlap fix:** the original DynaBARN lane generator ran every obstacle in a lane along the same path, so they passed through each other. Its `passes` option is gone because the motion loops forever.
+
+## Credits and licenses
+
+- **dynabarn-core:** BSD-3-Clause.
+- **[world-collection](https://github.com/mertgulerx/world-collection)** by Mert Güler, Apache-2.0. Imported worlds keep its LICENSE; the `MO2` and `P1` screenshots show imported worlds.
+- **[Microduck](https://github.com/pollen-robotics/microduck_rl)** by Pollen Robotics: code and MJCF Apache-2.0, **meshes CC BY-NC-SA 4.0**. Not bundled; built from your own clone. The screenshots showing Microducks (`docs/images/microducks_lanes.jpg`, `docs/images/robot_cameras.jpg`) are renders of those meshes and are therefore licensed CC BY-NC-SA 4.0, © Pollen Robotics.
