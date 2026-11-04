@@ -10,7 +10,7 @@ import tempfile
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription, LogInfo,
-                            OpaqueFunction, Shutdown, TimerAction)
+                            OpaqueFunction, SetEnvironmentVariable, Shutdown, TimerAction)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -24,6 +24,8 @@ ARGUMENTS = [
                           description='Baseline Nav2 controller; none leaves the robot to you'),
     DeclareLaunchArgument('nav_log_level', default_value='warn'),
     DeclareLaunchArgument('out_file', default_value='results.csv'),
+    DeclareLaunchArgument('reactive', default_value='off', choices=['off', 'yield', 'block'],
+                          description='How obstacles respond to the robot'),
     DeclareLaunchArgument('timeout', default_value='100', description='Trial timeout (s)'),
     # Start/goal of the DynaBARN task, same as the BARN Challenge's dynamic worlds
     DeclareLaunchArgument('x', default_value='11.0'),
@@ -90,6 +92,7 @@ def generate_launch_description():
                         for name in ('x', 'y', 'yaw', 'goal_x', 'goal_y')}}],
         on_exit=[Shutdown(reason='trial finished')])
     return LaunchDescription(ARGUMENTS + [
+        SetEnvironmentVariable('DYNABARN_REACTIVE', LaunchConfiguration('reactive')),
         OpaqueFunction(function=simulation),
         OpaqueFunction(function=navigation),
         # Up before the robot spawns: TouchPlugin fires once, so no touch can be missed.

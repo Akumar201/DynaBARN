@@ -1,168 +1,125 @@
-# DynaBARN on ROS 2
+# DynaBARN II on ROS 2
 
-Tools for generating [DynaBARN](https://cs.gmu.edu/~xxiao2/Research/DynaBARN/DynaBARN.html)-style dynamic obstacle worlds for Gazebo Classic 11, plus a ROS 2 Humble package for running and benchmarking a TurtleBot3 in those worlds. Everything runs inside a Docker container.
+Dynamic-obstacle navigation worlds for [ROS 2 Jazzy](https://docs.ros.org/en/jazzy/) and Gazebo Harmonic, built to extend [The BARN Challenge](https://people.cs.gmu.edu/~xiao/Research/BARN_Challenge/BARN_Challenge26.html). It contains the 60 original [DynaBARN](https://cs.gmu.edu/~xxiao2/Research/DynaBARN/DynaBARN.html) worlds, a new DynaBARN II world set, and a runner that scores a Clearpath Jackal with the BARN metric. Everything runs inside a Docker container.
 
 ## Repository layout
 
 ```
 dyna_barn/ros2_pkg/
-├── docker_env/                  # Docker image + helper script (ROS 2 Humble, Gazebo Classic, ros_gz)
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   ├── entrypoint.sh            # sources ROS/Gazebo and sets DynaBARN plugin/world paths
-│   └── start.sh
-└── ws/                          # colcon workspace, mounted at /ws in the container
-    └── src/
-        ├── DynaBARN/            # world + obstacle-plugin generators
-        └── dynabarn_turtlebot/  # ROS 2 package: launch files, robot model, nodes
+├── docker_env/             # Docker image and helper script
+└── ws/src/
+    ├── dynabarn2/          # ROS 2 package: plugin, worlds, generators, runner, baselines
+    └── DynaBARN/           # Legacy Gazebo Classic generators (ignored by colcon)
 ```
+
+Inside `dynabarn2/`:
+
+| Path | Contents |
+| --- | --- |
+| `src/ObstacleMover.cc` | Gazebo system that moves an obstacle along timed waypoints |
+| `worlds/dynabarn/` | The 60 original worlds, converted to Harmonic |
+| `worlds/dynabarn2/` | The DynaBARN II set and its `manifest.json` |
+| `scripts/` | World generators and `trial_runner.py` |
+| `launch/` | `run_trial.launch.py`, `nav2_baseline.launch.py` |
+| `config/robot.yaml` | Jackal with one front Hokuyo lidar |
+| `data/` | Original trajectories and the motion check against Gazebo Classic |
+| `results/` | Baseline results |
+| `tools/` | Batch runner, collision check, and extraction of the original trajectories |
 
 ## Requirements
 
 - Docker with the Compose plugin
-- An X11 display on the host (Gazebo and rqt need a GUI)
-- An NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/) (the compose file requests `gpus: all`; remove that line to run without one)
+- An NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/): the lidar is GPU-rendered
+- An X11 display, only for the Gazebo GUI
 
 ## Getting started
 
-### 1. Start the container
-
 ```bash
 cd dyna_barn/ros2_pkg/docker_env
-./start.sh            # build (if needed) and start the container
-./start.sh --getin    # start (if needed) and open a shell inside it
+./start.sh --getin                     # build and start the container, then open a shell
+cd /ws && colcon build && source install/setup.bash
 ```
 
-Other options: `--rebuild` (rebuild the image with no cache), `--shell` (shell into a running container), `--restart`.
+If `nvidia-smi` fails in a long-running container with `Failed to initialize NVML`, restart the container.
 
-You can also enter the running container directly:
+## Run a trial
 
 ```bash
-docker exec -it ros2-humble-gz /entrypoint.sh bash
+ros2 launch dynabarn2 run_trial.launch.py world_file:=dynabarn2/world_0 planner:=mppi
 ```
 
-Always go through `/entrypoint.sh` so that ROS, Gazebo and the DynaBARN plugin paths are set.
+| Argument | Default | Meaning |
+| --- | --- | --- |
+| `world_file` | `dynabarn/world_0` | World under `worlds/`, without `.sdf` |
+| `planner` | `mppi` | `mppi`, `dwb`, or `none` to run your own stack |
+| `gui` | `false` | Open the Gazebo GUI |
+| `out_file` | `results.csv` | CSV the result is appended to |
+| `timeout` | `100` | Time limit in seconds |
 
-### 2. Generate a world
+Use `planner:=none` for your own navigation stack. Subscribe to `/sensors/lidar2d_0/scan` and `/platform/odom/filtered`, and publish `geometry_msgs/TwistStamped` on `/platform/cmd_vel`. The robot starts at (11, 0) facing −x and the goal is (−9, 0), 20 m ahead.
 
-Generated files go in `DynaBARN/worlds/` and `DynaBARN/plugins/`, which are git-ignored. Inside the container:
+### Scoring
 
-```bash
-cd /ws/src/DynaBARN
-python3 generate_grid_plugins_gz11.py \
-  --movement controlled --axis row \
-  --rows 6 --x_min -9 --x_max 9 --y_min -8 --y_max 8 \
-  --passes 3 --speed 1.2 --count 36 --stagger_phase
+The rules follow The BARN Challenge. The clock starts when the robot first moves. A trial ends when the robot is within 1 m of the goal, touches anything, or reaches the time limit.
+
+```
+score = success × optimal_time / clip(time, 2 × optimal_time, 8 × optimal_time)
+optimal_time = path length / 2 m/s
 ```
 
-This compiles one Gazebo plugin per obstacle into `plugins/build/` and writes `worlds/world.world`. Open a new shell (or re-run `/entrypoint.sh`) after the first generation so `GAZEBO_PLUGIN_PATH` picks up `plugins/build`.
+The best possible score is 0.5. Each trial ends with one of these statuses:
 
-See [DynaBARN generators](#dynabarn-generators) for the other motion modes.
-
-### 3. Build the ROS 2 package
-
-```bash
-cd /ws
-colcon build --symlink-install
-source install/setup.bash
-```
-
-### 4. Run
-
-```bash
-# Just the world
-ros2 launch dynabarn_turtlebot bringup_dynabarn.launch.py world:=world.world
-
-# World + TurtleBot3 with camera + go-to-goal controller + annotated image viewer
-ros2 launch dynabarn_turtlebot end_to_end.launch.py goal_x:=10.0 goal_y:=0.0
-
-# Full benchmark: red-obstacle detector, then the end-to-end run after a delay
-ros2 launch dynabarn_turtlebot benchmarking.launch.py delay_sec:=5.0
-```
-
-## DynaBARN generators
-
-All scripts live in `ws/src/DynaBARN/` and use `base_boilerplate.world` as a template (generated models replace its `TOKEN` placeholder).
-
-| Script | What it generates |
+| Status | Meaning |
 | --- | --- |
-| `generate_grid_plugins_gz11.py` | Lane-based (`--movement controlled`) or random-waypoint (`--movement random`) obstacles |
-| `generate_plugins_gz11.py` | Original DynaBARN-style polynomial trajectories |
-| `generate_dynabarn_traffic.py` | Traffic-like lanes with lane changes (work in progress) |
-| `create_plugin_polynomial.py`, `polynomial_fit.py` | Polynomial trajectory helpers |
+| `succeeded` | Reached the goal |
+| `collided` | Touched an obstacle or wall |
+| `timeout` | Hit the time limit |
+| `hit_at_start` | Hit while parked, before the robot moved |
+| `no_start` | The robot never moved |
 
-Examples:
+To see a world without a robot, use `gz sim -r <path to .sdf>`; Gazebo opens paused without `-r`.
 
-```bash
-# Front↔back columns, random constant speed per obstacle
-python3 generate_grid_plugins_gz11.py \
-  --movement controlled --axis column \
-  --cols 6 --x_min -9 --x_max 9 --y_min -8 --y_max 8 \
-  --passes 3 --count 36 --stagger_phase \
-  --speed_min 0.6 --speed_max 1.8 --speed_mode agent
+## Worlds
 
-# Random bounce-walk (reflects at borders)
-python3 generate_grid_plugins_gz11.py \
-  --movement random --rand_bounce --rand_points 30 \
-  --speed_min 0.6 --speed_max 1.8 \
-  --count 40 --stagger_phase
+**DynaBARN (`worlds/dynabarn/`)** holds the 60 original worlds. Their waypoints were recovered from the original compiled plugins; see [`tools/classic_extract`](dyna_barn/ros2_pkg/ws/src/dynabarn2/tools/classic_extract/README.md). Motion is kept faithful to Gazebo Classic, including its speed spikes, spline overshoot, and obstacles passing through each other.
 
-# Polynomial trajectories
-python3 generate_plugins_gz11.py \
-  --save_dir ./worlds --plugins_dir ./plugins --seed 11 \
-  --min_object 2 --max_object 6 \
-  --min_speed 0.5 --max_speed 1.5 \
-  --min_std 0.05 --max_std 0.20 \
-  --min_order 3 --max_order 6
-```
+**DynaBARN II (`worlds/dynabarn2/`)** holds 60 worlds: 5 families × 3 levels × 4 worlds.
 
-Note: `generate_plugins_gz11.py` currently always writes 20 worlds, regardless of `--n_worlds`.
+| Family | Motion |
+| --- | --- |
+| `crowd` | Discs wander and bounce |
+| `lanes` | Two-way lanes |
+| `traffic` | Lanes with lane changes |
+| `stop_and_go` | Traffic that keeps stopping and starting |
+| `mixed` | Mixed sizes and shapes moving through static clutter |
 
-To view a world without ROS:
+Obstacles are simulated offline as colliding discs and saved as waypoints, so they bounce off each other while every run stays identical. Each world is kept only if a robot can reach the goal. `manifest.json` records its family, level, seed and difficulty, including `blind_collision`: the chance that a robot driving straight at the goal without reacting gets hit.
+
+## Generating worlds
 
 ```bash
-gazebo --verbose /ws/src/DynaBARN/worlds/world.world
+# The fixed DynaBARN II set; the same seed gives the same worlds
+ros2 run dynabarn2 generate_dynabarn2.py --save_dir worlds/dynabarn2 --per_cell 4
+
+# Custom one-off worlds, without obstacle-to-obstacle collisions
+ros2 run dynabarn2 generate_movers.py --movement traffic --axis row --count 20 --save_dir /tmp/w
+ros2 run dynabarn2 generate_polynomial.py --save_dir /tmp/poly --n_worlds 5 \
+  --min_speed 0.5 --max_speed 1.5 --min_std 0.05 --max_std 0.2 --min_order 3 --max_order 6
 ```
 
-More background and the 60 premade DynaBARN worlds are in [`ws/src/DynaBARN/README.md`](dyna_barn/ros2_pkg/ws/src/DynaBARN/README.md).
+Use `--help` on any generator for the full list of options. For fair comparisons, use the fixed sets rather than newly generated worlds.
 
-## `dynabarn_turtlebot` package
-
-### Launch files
-
-| Launch file | Description | Key arguments |
-| --- | --- | --- |
-| `bringup_dynabarn.launch.py` | Gazebo with a DynaBARN world | `worlds_dir`, `world` |
-| `bringup_turtlebot.launch.py` | Stock TurtleBot3 in an empty world | `model`, `gui`, `x`, `y`, `z`, `yaw` |
-| `bringup_turtlebotCamera.launch.py` | TurtleBot3 Burger with RGB/depth camera in an empty world | `gui`, `x`, `y`, `z`, `yaw` |
-| `wander.launch.py` | DynaBARN world + camera TurtleBot (defaults to `world_18.world`) | `world`, `x`, `y`, `yaw` |
-| `end_to_end.launch.py` | World + robot + `end_to_end` controller + `rqt_image_view` | `world`, `x` (default `-8.0`), `goal_x`, `goal_y` |
-| `imagedetector.launch.py` | Red-obstacle detector node | — |
-| `benchmarking.launch.py` | `imagedetector`, then `end_to_end` after a delay | `delay_sec` |
-
-### Nodes
-
-| Executable | Description | Topics |
-| --- | --- | --- |
-| `end_to_end` | Proportional go-to-goal controller that stops in front of close obstacles | sub `/odom`, `/scan`; pub `/cmd_vel` |
-| `wander` | RRT-based local planner on an occupancy grid built from the laser scan | sub `/odom`, `/scan`; pub `/cmd_vel` |
-| `imagedetector` | Detects red obstacles in RGB, estimates distance from depth | sub `/turtlebot3/rgb_cam/image_raw`, `/turtlebot3/depth_cam/image_raw`; pub `/imagedetector/image_annotated`, `/barn_distance` |
-
-Run a node on its own with, for example:
+## Baselines
 
 ```bash
-ros2 run dynabarn_turtlebot end_to_end --ros-args -p goal_x:=5.0 -p max_linear_speed:=0.2
+# <tag> <first world> <last world> <world prefix> <repeats> <parallel trials>
+dyna_barn/ros2_pkg/ws/src/dynabarn2/tools/run_baselines.sh dynabarn2 0 59 dynabarn2/world_ 3 6
 ```
 
-`collision_counter.py`, `collision_watch.py` and `bumper_topic_logger.py` are collision-monitoring helpers that subscribe to Gazebo bumper `ContactsState` topics. They are not registered as executables yet; run them with `python3` from the package directory.
+Run this on the host, not in the container; it needs a built workspace. Finished trials are skipped, so an interrupted batch can be re-run. Results go to `results/<tag>.csv`. `tools/check_collisions.py` checks that every reported collision really happened next to something.
 
-To drive the robot manually:
-
-```bash
-sudo apt-get update && sudo apt-get install -y ros-humble-teleop-twist-keyboard
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
-```
+Baselines are Nav2 with the DWB and MPPI controllers on Clearpath's J100 configuration, made mapless and capped at 1 m/s. They are reference points, not tuned for dynamic obstacles.
 
 ## License
 
-`dynabarn_turtlebot` is released under the BSD-3-Clause license (see `setup.py`).
+`dynabarn2` is released under the BSD-3-Clause license (see `package.xml`).

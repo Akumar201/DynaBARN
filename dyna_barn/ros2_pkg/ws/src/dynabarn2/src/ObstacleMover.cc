@@ -17,9 +17,14 @@
 //     <waypoint>0.0  -9 -8 0.5</waypoint>    <!-- time x y z -->
 //     <waypoint>15.0  9 -8 0.5</waypoint>
 //   </plugin>
+//
+// Reactive mode: set DYNABARN_REACTIVE=yield or block in Gazebo's environment and obstacles respond
+// to the robot, moving away from it or towards it while near it, then easing back to their path.
+// It uses no randomness, so the same robot motion always produces the same obstacle motion.
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -34,9 +39,16 @@
 #include <gz/sim/Util.hh>
 #include <gz/sim/components/AngularVelocityCmd.hh>
 #include <gz/sim/components/LinearVelocityCmd.hh>
+#include <gz/sim/components/Model.hh>
+#include <gz/sim/components/Name.hh>
 
 namespace dynabarn2
 {
+constexpr double kInfluenceRadius = 2.5;  // m, how close the robot must be to get a response
+constexpr double kResponseSpeed = 1.0;    // m/s, at zero distance from the robot
+constexpr double kRecoveryTime = 2.0;     // s, time constant for easing back to the path
+constexpr double kMaxOffset = 2.0;        // m, furthest an obstacle strays from its path
+
 struct Waypoint
 {
   double time;
@@ -101,6 +113,17 @@ public:
     for (const auto &wp : this->waypoints)
       this->curve.AddPoint(wp.position);
 
+    if (const char *mode = std::getenv("DYNABARN_REACTIVE"))
+    {
+      const std::string value(mode);
+      if (value == "yield")
+        this->reactiveSign = 1.0;
+      else if (value == "block")
+        this->reactiveSign = -1.0;
+      else if (!value.empty() && value != "off")
+        gzerr << "Unknown DYNABARN_REACTIVE '" << value << "'; using fixed motion.\n";
+    }
+
     // Keep the model's initial orientation; obstacles only translate.
     this->rotation = gz::sim::worldPose(_entity, _ecm).Rot();
 
@@ -122,6 +145,8 @@ public:
 
     gz::math::Vector3d pos, vel;
     this->Sample(t, pos, vel);
+    if (this->reactiveSign != 0.0)
+      this->React(_info, _ecm, pos, vel);
 
     this->model.SetWorldPoseCmd(_ecm, gz::math::Pose3d(pos, this->rotation));
 
@@ -136,6 +161,40 @@ public:
   }
 
 private:
+  // Shift the path position by an offset that grows near the robot and decays away from it.
+  void React(const gz::sim::UpdateInfo &_info, gz::sim::EntityComponentManager &_ecm,
+             gz::math::Vector3d &_pos, gz::math::Vector3d &_vel)
+  {
+    if (this->robot == gz::sim::kNullEntity)
+      this->robot = _ecm.EntityByComponents(gz::sim::components::Model(),
+                                            gz::sim::components::Name("robot"));
+    const double dt = std::chrono::duration<double>(_info.dt).count();
+    if (!_info.paused && dt > 0.0)
+    {
+      gz::math::Vector3d rate = -this->offset / kRecoveryTime;
+      if (this->robot != gz::sim::kNullEntity)
+      {
+        gz::math::Vector3d away = _pos + this->offset -
+                                  gz::sim::worldPose(this->robot, _ecm).Pos();
+        away.Z() = 0.0;
+        const double distance = away.Length();
+        if (distance > 1e-3 && distance < kInfluenceRadius)
+          rate += away / distance * this->reactiveSign * kResponseSpeed *
+                  (1.0 - distance / kInfluenceRadius);
+      }
+      const gz::math::Vector3d next = this->offset + rate * dt;
+      this->offsetRate = rate;
+      this->offset = next;
+      if (this->offset.Length() > kMaxOffset)
+      {
+        this->offset = this->offset.Normalized() * kMaxOffset;
+        this->offsetRate = gz::math::Vector3d::Zero;
+      }
+    }
+    _pos += this->offset;
+    _vel += this->offsetRate;
+  }
+
   // Position and velocity at time _t (already wrapped into [0, duration]).
   void Sample(double _t, gz::math::Vector3d &_pos,
               gz::math::Vector3d &_vel) const
@@ -187,6 +246,10 @@ private:
   double duration{0.0};
   bool loop{true};
   bool spline{true};
+  double reactiveSign{0.0};  // 0 fixed motion, 1 yield to the robot, -1 block it
+  gz::sim::Entity robot{gz::sim::kNullEntity};
+  gz::math::Vector3d offset{gz::math::Vector3d::Zero};
+  gz::math::Vector3d offsetRate{gz::math::Vector3d::Zero};
 };
 }  // namespace dynabarn2
 
