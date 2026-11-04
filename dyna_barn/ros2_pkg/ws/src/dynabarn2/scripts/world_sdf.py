@@ -50,13 +50,35 @@ def default_walls():
             + wall("bottom_wall", 0, -10, 20, 0.5))
 
 
+def _shape(kind, radius, height):
+    if kind == "box":  # square that fits inside the disc of this radius
+        side = radius * 2 ** 0.5
+        return f"<geometry><box><size>{side:.4f} {side:.4f} {height}</size></box></geometry>"
+    return f"<geometry><cylinder><radius>{radius}</radius><length>{height}</length></cylinder></geometry>"
+
+
+def static_obstacle(name, x, y, radius, height=1.0):
+    """Fixed cylinder, for clutter between the moving obstacles."""
+    geom = _shape("cylinder", radius, height)
+    return f"""
+    <model name="{name}">
+      <static>true</static>
+      <pose>{x:.4f} {y:.4f} {height / 2} 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">{geom}</collision>
+        <visual name="visual">{geom}{_material(WALL_COLOR)}</visual>
+        {TOUCH_SENSOR}
+      </link>{TOUCH_PLUGIN}
+    </model>"""
+
+
 def obstacle(name, waypoints, radius=0.5, height=1.0, mass=10.0,
-             interpolation="spline", loop=True):
-    """Cylinder obstacle following waypoints [(t, x, y), ...]; t in seconds, starting at 0."""
+             interpolation="spline", loop=True, shape="cylinder"):
+    """Obstacle following waypoints [(t, x, y), ...]; t in seconds, starting at 0."""
     z = height / 2.0
     ixx = (1.0 / 12.0) * mass * (3.0 * radius ** 2 + height ** 2)
     izz = 0.5 * mass * radius ** 2
-    geom = f"<geometry><cylinder><radius>{radius}</radius><length>{height}</length></cylinder></geometry>"
+    geom = _shape(shape, radius, height)
     t0, x0, y0 = waypoints[0]
     wps = "\n".join(f"        <waypoint>{t:.4f} {x:.4f} {y:.4f} {z:.4f}</waypoint>"
                     for t, x, y in waypoints)
