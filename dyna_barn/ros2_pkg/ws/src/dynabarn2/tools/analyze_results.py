@@ -25,7 +25,8 @@ VOID = ('no_start',)  # startup failures: the planner never ran, so they say not
 def load(pkg, tag):
     rows = []
     for path in glob.glob(os.path.join(pkg, 'results', tag, '*.csv')):
-        rows += csv.DictReader(open(path))
+        repeat = os.path.basename(path)[:-4].rsplit('_', 1)[1]
+        rows += [dict(r, repeat=repeat) for r in csv.DictReader(open(path))]
     return rows
 
 
@@ -123,6 +124,20 @@ def rank_gap(rows, rng):
     return (sum(diffs) / len(diffs), *ci(diffs, rng), len(worlds))
 
 
+def rank_agreement(a, b, rng):
+    """Spearman of two {world: value} maps, with a bootstrap over worlds."""
+    worlds = sorted(set(a) & set(b))
+    rho = spearman([a[w] for w in worlds], [b[w] for w in worlds])
+    samples = []
+    for _ in range(BOOTSTRAP):
+        pick = rng.choices(worlds, k=len(worlds))
+        r = spearman([a[w] for w in pick], [b[w] for w in pick])
+        if r == r:
+            samples.append(r)
+    samples.sort()
+    return rho, samples[int(0.025 * len(samples))], samples[int(0.975 * len(samples))]
+
+
 def main():
     pkg = sys.argv[1]
     rng = random.Random(2026)
@@ -162,6 +177,35 @@ def main():
         for p in PLANNERS:
             paired(fixed, yielding, 'yield', p, rng)
             paired(fixed, blocking, 'block', p, rng)
+        group_table('Success by level, obstacles yield', yielding, lambda w: entry(w)['level'], LEVELS)
+        group_table('Success by level, obstacles block', blocking, lambda w: entry(w)['level'], LEVELS)
+        modes = (('fixed', fixed), ('yield', yielding), ('block', blocking))
+
+        print('\n### Does reactive motion reorder world difficulty?\n')
+        print('| Planner | Modes | Spearman of world success (95% CI) |')
+        print('| --- | --- | --- |')
+        for p in PLANNERS:
+            for (na, ra), (nb, rb) in zip(modes[:1] * 2, modes[1:]):
+                rho, lo, hi = rank_agreement(by_world(ra, p), by_world(rb, p), rng)
+                print(f'| {p} | {na} vs {nb} | {rho:.2f} ({lo:.2f} to {hi:.2f}) |')
+            # Noise ceiling: one repeat against the other two, same mode. Averaged over which is held out.
+            rhos = []
+            for held in '123':
+                rhos.append(spearman(*zip(*[
+                    (by_world([r for r in fixed if r['repeat'] == held], p).get(w, 0.0), v)
+                    for w, v in by_world([r for r in fixed if r['repeat'] != held], p).items()])))
+            print(f'| {p} | fixed, repeat vs other two | {sum(rhos) / 3:.2f} |')
+
+        print('\n### Does blind_collision predict success in each mode?\n')
+        print('| Planner | Mode | Spearman |')
+        print('| --- | --- | --- |')
+        for p in PLANNERS:
+            for name, rows in modes:
+                ok = by_world(rows, p)
+                worlds = sorted(ok)
+                rho = spearman([entry(w)['blind_collision'] for w in worlds], [ok[w] for w in worlds])
+                print(f'| {p} | {name} | {rho:.2f} |')
+
         print('\n### Does the DWB vs MPPI ranking change?\n')
         print('| Mode | Worlds | DWB minus MPPI success (95% CI) |')
         print('| --- | --- | --- |')
