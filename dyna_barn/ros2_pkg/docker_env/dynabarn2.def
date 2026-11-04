@@ -6,6 +6,4 @@ Bootstrap: docker-daemon
 From: dynabarn2:latest
 
 %runscript
-    . /opt/ros/jazzy/setup.bash
-    . /opt/dynabarn2/install/setup.bash
-    exec "$@"
+    exec /entrypoint.sh "$@"
