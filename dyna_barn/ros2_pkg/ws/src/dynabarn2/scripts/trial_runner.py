@@ -74,7 +74,9 @@ class TrialRunner(Node):
                 self.pos = (t.x, t.y)
 
     def on_touch(self, msg):
-        if msg.data and self.t_start is not None:
+        # TouchPlugin fires only once per obstacle, so a touch must never be ignored, even
+        # one that lands before the robot has moved.
+        if msg.data:
             self.touched = True
 
     def send_goal(self):
@@ -110,7 +112,9 @@ class TrialRunner(Node):
             self.send_goal()
 
         if self.t_start is None:
-            if math.dist(self.pos, self.start) >= START_RADIUS:
+            if self.touched:
+                self.finish('collided', 0.0)
+            elif math.dist(self.pos, self.start) >= START_RADIUS:
                 self.t_start = now
                 self.get_logger().info('Trial running')
             elif now - self.t_begin > self.start_timeout:
@@ -128,6 +132,7 @@ class TrialRunner(Node):
     def finish(self, status, elapsed):
         self.finished = True
         metric = nav_metric(status == 'succeeded', elapsed, self.path_length)
+        end_time = self.get_clock().now().nanoseconds * 1e-9
         self.get_logger().info(f'Trial {status} in {elapsed:.3f} s, score {metric:.4f}')
         path = self.get_parameter('out_file').value
         new = not os.path.exists(path)
@@ -135,10 +140,10 @@ class TrialRunner(Node):
             w = csv.writer(f)
             if new:
                 w.writerow(['world', 'planner', 'status', 'time_s', 'score',
-                            'final_x', 'final_y'])
+                            'final_x', 'final_y', 'end_sim_time'])
             w.writerow([self.get_parameter('world').value, self.get_parameter('planner').value,
                         status, f'{elapsed:.3f}', f'{metric:.4f}',
-                        f'{self.pos[0]:.3f}', f'{self.pos[1]:.3f}'])
+                        f'{self.pos[0]:.3f}', f'{self.pos[1]:.3f}', f'{end_time:.3f}'])
         raise SystemExit
 
 

@@ -92,5 +92,6 @@ def generate_launch_description():
     return LaunchDescription(ARGUMENTS + [
         OpaqueFunction(function=simulation),
         OpaqueFunction(function=navigation),
-        TimerAction(period=10.0, actions=[runner]),
+        # Up before the robot spawns: TouchPlugin fires once, so no touch can be missed.
+        runner,
     ])
