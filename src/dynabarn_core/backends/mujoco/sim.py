@@ -168,6 +168,15 @@ class MujocoSimulation(Simulation):
             self._renderer_size = (0, 0)
             self._renderer_thread = None
 
+    def open_viewer(self, follow: bool = False):
+        import mujoco.viewer
+
+        from .viewer import ViewerHandle, _setup_camera
+
+        v = mujoco.viewer.launch_passive(self.model, self.data, show_left_ui=False, show_right_ui=False)
+        _setup_camera(v, self, follow)
+        return ViewerHandle(v)
+
     # -- internals -------------------------------------------------------------
     def _update_obstacles(self) -> None:
         t = self.data.time
@@ -177,7 +186,7 @@ class MujocoSimulation(Simulation):
             self.data.mocap_quat[idx] = yaw_to_quat_wxyz(p.yaw)
 
     def _apply_command(self) -> None:
-        d = self.robot.drive
+        d = self.robot.drive_for("mujoco")
         v = float(np.clip(self._command.linear, -d.max_linear, d.max_linear))
         w = float(np.clip(self._command.angular, -d.max_angular, d.max_angular))
         half = d.wheel_separation / 2.0

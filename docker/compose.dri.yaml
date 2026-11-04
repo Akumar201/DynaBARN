@@ -1,0 +1,5 @@
+# Intel / AMD GPU: hand the host's DRM devices to Mesa.
+services:
+  dev:
+    devices:
+      - /dev/dri:/dev/dri

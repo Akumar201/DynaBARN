@@ -1,0 +1,39 @@
+# Base setup: works on any machine. OpenGL comes from Mesa (software
+# rendering) unless one of the GPU override files is added:
+#
+#   docker compose -f docker/compose.yaml run --rm dev                          # any machine
+#   docker compose -f docker/compose.yaml -f docker/compose.dri.yaml run --rm dev     # Intel / AMD GPU
+#   docker compose -f docker/compose.yaml -f docker/compose.nvidia.yaml run --rm dev  # NVIDIA GPU
+#
+# GUIs (Gazebo, MuJoCo viewer, RViz) need X access once per login:  xhost +local:docker
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        ROS_DISTRO: ${ROS_DISTRO:-jazzy}
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    image: dynabarn:${ROS_DISTRO:-jazzy}
+    volumes:
+      - ..:/work
+      - ./entrypoint.sh:/entrypoint.sh:ro   # edits apply without rebuilding the image
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ws-${ROS_DISTRO:-jazzy}:/ws
+    environment:
+      DISPLAY: ${DISPLAY:-:0}
+      QT_X11_NO_MITSHM: "1"
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-42}
+      MUJOCO_GL: ${MUJOCO_GL:-egl}
+      # optional extras for tests that use external checkouts
+      WORLD_COLLECTION_DIR: ${WORLD_COLLECTION_DIR:-}
+      MICRODUCK_DIR: ${MICRODUCK_DIR:-}
+    ipc: host
+    network_mode: host
+    stdin_open: true
+    tty: true
+
+volumes:
+  ws-jazzy:
+  ws-humble:

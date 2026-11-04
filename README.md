@@ -22,7 +22,8 @@ A Python package for [DynaBARN](https://cs.gmu.edu/~xxiao2/Research/DynaBARN/Dyn
 | Simulator backend | Status |
 | --- | --- |
 | MuJoCo | Default. Export to MJCF and in-process simulation with lidar, IMU, odometry, joint states, contacts and cameras |
-| gz-sim (modern Gazebo), Isaac Sim | Not yet; they plug in as backends (see [Adding a simulator](#adding-a-simulator)) |
+| Gazebo (gz-sim Harmonic) | Export to SDF; runs out of process, used through [ROS 2](#ros-2-mujoco-or-gazebo). Same obstacles, sensors and topics as MuJoCo |
+| Isaac Sim | Not yet; plugs in as a backend (see [Adding a simulator](#adding-a-simulator)) |
 
 ## Quick start
 
@@ -124,29 +125,58 @@ sensors:
 
 With a GPU, cameras only matter when running faster than real time. With CPU rendering, each frame takes 9–19 ms. Sensors still produce every sample in simulation time, but they arrive in bursts after each frame, so a `get()` poller misses some. Use `subscribe()` to receive every reading, or lower the camera `rate_hz` or resolution.
 
-### Using it from a ROS 2 node (not included, not tested)
+## ROS 2 (MuJoCo or Gazebo)
 
-dynabarn has no ROS dependency. A node only needs `get` and `set_command`, which is the pattern this API is designed for:
+`ros2/dynabarn_ros` is a ROS 2 package on top of dynabarn-core. Both simulators give a ROS user the same robot: the same topics and message types, sensor rates, frames, TF tree and simulation clock (`/clock`). The topic list comes from one ROS-free description, `dynabarn_core.interface`.
 
-```python
-class DynaBarnNode(Node):
-    def __init__(self):
-        super().__init__("dynabarn")
-        self.db = DynaBarn.from_preset("burger_lanes").start()
-        self.imu_pub = self.create_publisher(Imu, "imu", 10)
-        self.create_subscription(Twist, "cmd_vel", lambda m: self.db.set_command(m.linear.x, m.angular.z), 10)
-        self.create_timer(1 / 200, self.publish_imu)        # any rate you like
-        self.last = None
-
-    def publish_imu(self):
-        r = self.db.get("imu")
-        if r is None or r is self.last:                       # only publish new samples
-            return
-        self.last = r
-        self.imu_pub.publish(to_ros_imu(r.data, stamp=r.stamp, frame_id=r.frame))
+```bash
+ros2 launch dynabarn_ros mujoco.launch.py preset:=dynabarn_lanes seed:=3 viewer:=true
+ros2 launch dynabarn_ros gazebo.launch.py preset:=dynabarn_lanes seed:=3            # gz GUI; headless:=true for none
+# the same scenario options for both: scenario:=FILE | preset:=NAME | generator:=lanes params:="{lanes: 3, count: 6}"
 ```
 
-`sensors()` gives each sensor's mount pose, which is what a static TF broadcaster needs.
+| Topic | Type | Frame |
+| --- | --- | --- |
+| `cmd_vel` (subscribed) | `geometry_msgs/Twist` | |
+| `scan` | `sensor_msgs/LaserScan` | `base_scan` |
+| `imu` | `sensor_msgs/Imu` | `imu_link` |
+| `odom` (+ TF `odom → base_link`) | `nav_msgs/Odometry` | `odom` |
+| `joint_states` | `sensor_msgs/JointState` | |
+| `ground_truth` | `nav_msgs/Odometry` | `world` |
+| `<camera>/image_raw`, `<camera>/camera_info` (when enabled) | `sensor_msgs/Image`, `CameraInfo` | `<camera frame>_optical` |
+| `/clock`, `/tf_static` (sensor mounts from `asset.yaml`) | | |
+
+Rates and frames come from the robot's `asset.yaml`. Every message is stamped with simulation time, so run your nodes with `use_sim_time:=true`.
+
+- **MuJoCo:** `mujoco_node` wraps `DynaBarn` and publishes each reading as soon as it exists.
+- **Gazebo:** the launch file exports the scenario to SDF, starts `gz sim` and bridges the topics with `ros_gz_bridge`.
+  - **Moving obstacles:** dynabarn's own Python system inside Gazebo moves them with the same trajectory code as MuJoCo, so the paths are identical.
+  - **Odometry:** the same Python system also computes it with the same code as MuJoCo.
+
+### Docker (ROS 2 Jazzy + Gazebo Harmonic)
+
+The image works on any machine: OpenGL comes from Mesa software rendering unless you add a GPU file.
+
+```bash
+docker compose -f docker/compose.yaml build
+xhost +local:docker                                   # once per login, for GUIs
+docker compose -f docker/compose.yaml run --rm dev    # shell with ROS, Gazebo and this repo at /work
+#   + -f docker/compose.dri.yaml     Intel / AMD GPU
+#   + -f docker/compose.nvidia.yaml  NVIDIA GPU (NVIDIA Container Toolkit)
+```
+
+The container installs your checkout in editable mode and builds `ros2/` into `/ws` on start.
+
+- **All tests**, including the Gazebo integration and MuJoCo-vs-Gazebo checks:
+  ```bash
+  docker compose -f docker/compose.yaml run --rm dev pytest
+  docker compose -f docker/compose.yaml run --rm dev python -m pytest /work/ros2/dynabarn_ros/test
+  ```
+- **API findings:** what porting taught us about the API is in [docs/api-notes.md](docs/api-notes.md).
+
+### Without ROS
+
+dynabarn has no ROS dependency; `mujoco_node.py` is a small example of the pattern. `get()` / `subscribe()` give readings, `set_command()` drives the robot, and `sensors()` gives each sensor's mount pose.
 
 ## Scenarios
 
@@ -324,12 +354,16 @@ src/dynabarn_core/
   importers/    world importers (sdf, world_collection), Microduck asset builder
   backends/     simulator adapters: SimBackend = Exporter + runtime (Simulation or launch_command)
     mujoco/     MuJoCo exporter, simulation, sensors, viewer
+    gazebo/     SDF exporter, ros_gz_bridge config, Python system run inside gz-sim
+  interface.py  ROS-free description of the robot's topics, types and frames
   runtime.py    DynaBarn: background thread, get() / set_command()
   data/assets/  built-in robots, obstacles and environments (shipped in the wheel)
   data/presets/ built-in presets
 scenarios/      example scenario files
 examples/       using dynabarn from your own code
 docs/images/    README screenshots
+ros2/dynabarn_ros/  ROS 2 package: MuJoCo node, Gazebo launch, parity tests
+docker/         ROS 2 Jazzy + Gazebo Harmonic image (GPU-agnostic)
 ```
 
 Each layer depends only on the layers listed above it.
@@ -344,12 +378,12 @@ Each layer depends only on the layers listed above it.
 | Template Method | `Generator.build` | Generators only write `make_trajectories` |
 
 Two rules keep the backends interchangeable:
-- **Trajectories have a universal export form.** Every trajectory implements `pose_at(t)` and `as_waypoints()`. A simulator that can't call Python at runtime, such as a gz-sim C++ plugin, plays back the waypoints.
+- **Trajectories have a universal export form.** Every trajectory implements `pose_at(t)` and `as_waypoints()`. Gazebo runs the trajectories themselves through its Python system. A simulator that can't call Python at runtime can play back the waypoints instead.
 - **Simulations speak `core.messages`.** Backends produce `Observation` and `SensorReading` objects and accept `VelocityCommand`. Middleware such as ROS 2 or a Gym wrapper converts these, so simulators never import ROS and ROS code never imports a simulator.
 
 ## Notes
 
-- **Robot models:** the MuJoCo robots use primitive shapes with the real dimensions and masses. The Burger tracks velocity commands to within about 2%. The Jackal is skid steer: in MuJoCo it turns at about 43% of what its physical 0.376 m track predicts, so its `asset.yaml` uses an effective `wheel_separation` of 0.87 m, which brings tracking within about 5%.
+- **Robot models:** the MuJoCo robots use primitive shapes with the real dimensions and masses. The Burger tracks velocity commands to within about 2%. The Jackal is skid steer: in MuJoCo it turns at about 43% of what its physical 0.376 m track predicts, so its `asset.yaml` uses an effective `wheel_separation` of 0.87 m, which brings tracking within about 5%. Gazebo's friction differs, so its representation overrides this with 0.525 m (`drive:` under `representations.gazebo`). That keeps tracking within 3%.
 - **Lane overlap fix:** the original DynaBARN lane generator ran every obstacle in a lane along the same path, so they passed through each other. Its `passes` option is gone because the motion loops forever.
 
 ## Credits and licenses

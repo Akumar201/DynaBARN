@@ -178,6 +178,13 @@ class Simulation(ABC):
         for cb in (*self._subscribers.get(reading.name, ()), *self._subscribers.get("*", ())):
             cb(reading)
 
+    def open_viewer(self, follow: bool = False):
+        """Open an on-screen window showing the simulation, for programs that
+        drive it themselves (e.g. ``DynaBarn`` in the background). Returns a
+        handle with ``sync()`` (call with the simulation lock held),
+        ``is_running()`` and ``close()``."""
+        raise BackendError(f"{type(self).__name__} has no on-screen viewer")
+
     def release_thread_resources(self) -> None:
         """Free resources tied to the calling thread, such as OpenGL contexts
         used for camera rendering. Runners call this on the old thread before

@@ -72,6 +72,7 @@ class DynaBarn:
         self._error: BaseException | None = None
         self._last_command_wall = time.monotonic()
         self._measured_rtf = 0.0
+        self._viewer = None
 
     # -- construction helpers ----------------------------------------------------
     @classmethod
@@ -107,12 +108,22 @@ class DynaBarn:
         self._thread.start()
         return self
 
+    def open_viewer(self, follow: bool = False) -> "DynaBarn":
+        """Show the simulation in an on-screen window (refreshed at ~30 Hz
+        while running). Closing the window does not stop the simulation."""
+        if self._viewer is None:
+            self._viewer = self.sim.open_viewer(follow=follow)
+        return self
+
     def stop(self) -> None:
         self._stop.set()
         self._paused.clear()
         if self._thread is not None:
             self._thread.join(timeout=5.0)
             self._thread = None
+        if self._viewer is not None:
+            self._viewer.close()
+            self._viewer = None
         with self._new_data:
             self._new_data.notify_all()
         self._raise_if_failed()
@@ -226,6 +237,7 @@ class DynaBarn:
     def _run(self) -> None:
         try:
             wall0, sim0 = time.monotonic(), self.sim.time
+            next_frame = 0.0
             while not self._stop.is_set():
                 if self._paused.is_set():
                     time.sleep(0.01)
@@ -237,6 +249,11 @@ class DynaBarn:
                 self.sim.advance(self._tick())
                 with self._new_data:
                     self._new_data.notify_all()
+                if self._viewer is not None and time.monotonic() >= next_frame:
+                    next_frame = time.monotonic() + 1 / 30
+                    if self._viewer.is_running():
+                        with self.sim._lock:
+                            self._viewer.sync()
                 elapsed_sim = self.sim.time - sim0
                 elapsed_wall = time.monotonic() - wall0
                 if elapsed_wall > 0:

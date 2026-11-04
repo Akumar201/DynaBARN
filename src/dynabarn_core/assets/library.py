@@ -17,6 +17,7 @@ so users override a built-in asset by reusing its id:
 """
 from __future__ import annotations
 
+import dataclasses
 import math
 import os
 from dataclasses import dataclass, field
@@ -45,6 +46,10 @@ class Representation:
     path: Path
     format: str | None = None
     bindings: dict[str, str] = field(default_factory=dict)
+    # simulator-specific values of generic robot settings, e.g. the effective
+    # track of a skid-steer robot, which depends on the physics engine:
+    # {"wheel_separation": 0.525}
+    drive: dict[str, float] = field(default_factory=dict)
 
     def binding(self, key: str, default: str | None = None) -> str:
         if key in self.bindings:
@@ -89,6 +94,7 @@ class Asset:
                 path=(root / r["path"]).resolve(),
                 format=r.get("format"),
                 bindings=dict(r.get("bindings") or {}),
+                drive={k: float(v) for k, v in (r.get("drive") or {}).items()},
             )
         return {
             "id": str(data["id"]),
@@ -152,10 +158,27 @@ class SensorSpec:
     frame: str
     rate_hz: float
     enabled: bool = True
+    # pose of ``frame`` relative to the robot's base frame: [x, y, z, roll, pitch, yaw]
+    # (metres, radians; x forward, y left, z up, also for cameras). Simulator-
+    # independent, so out-of-process simulators and ROS TF can use it; MuJoCo
+    # reads the pose from its own model, and a test checks the two agree.
+    mount: tuple[float, float, float, float, float, float] | None = None
 
     def __post_init__(self) -> None:
         if self.rate_hz <= 0:
             raise ValueError(f"sensor '{self.name}': rate_hz must be > 0")
+        if self.mount is not None:
+            m = tuple(float(v) for v in self.mount)
+            if len(m) == 3:
+                m += (0.0, 0.0, 0.0)
+            if len(m) != 6:
+                raise ValueError(f"sensor '{self.name}': mount must be [x, y, z] or [x, y, z, roll, pitch, yaw]")
+            object.__setattr__(self, "mount", m)
+
+    @property
+    def mount_pose(self) -> tuple[float, float, float, float, float, float]:
+        """``mount``, or the base frame's origin when none is given."""
+        return self.mount or (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -179,6 +202,17 @@ class CameraSpec(SensorSpec):
     depth: bool = False
     enabled: bool = False   # rendering is costly and needs OpenGL: opt in
     noise_std: float = 0.0  # rgb: intensity units (0-255); depth: metres
+
+    @property
+    def optical_frame(self) -> str:
+        """Frame that images are stamped with (ROS convention: z forward, x right, y down)."""
+        return f"{self.frame}_optical"
+
+    @property
+    def vertical_fov_deg(self) -> float:
+        import math
+
+        return math.degrees(2 * math.atan(math.tan(math.radians(self.fov_deg) / 2) * self.height / self.width))
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -264,6 +298,16 @@ class RobotAsset(Asset):
         dupes = {n for n in names if names.count(n) > 1}
         if dupes:
             raise ValueError(f"robot '{self.id}': duplicate sensor names {sorted(dupes)}")
+
+    def drive_for(self, backend: str) -> DiffDriveSpec:
+        """``drive`` with the backend's overrides applied (see Representation.drive)."""
+        rep = self.representation(backend)
+        if rep is None or not rep.drive:
+            return self.drive
+        try:
+            return dataclasses.replace(self.drive, **rep.drive)
+        except TypeError as e:
+            raise AssetError(f"robot '{self.id}', {backend} drive override: {e}") from None
 
     def sensors(self) -> tuple[SensorSpec, ...]:
         """All sensor specs, enabled or not."""

@@ -1,0 +1,15 @@
+# NVIDIA GPU (needs the NVIDIA Container Toolkit on the host).
+services:
+  dev:
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+      __GLX_VENDOR_LIBRARY_NAME: nvidia
+      __EGL_VENDOR_LIBRARY_FILENAMES: /usr/share/glvnd/egl_vendor.d/10_nvidia.json
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

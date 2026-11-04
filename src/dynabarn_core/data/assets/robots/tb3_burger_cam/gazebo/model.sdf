@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<!-- Simplified TurtleBot3 Burger for Gazebo (primitive geometry, no meshes),
+     matching mujoco/robot.xml. Like the official TurtleBot3 Gazebo model the
+     caster is a fixed, frictionless sphere. Sensors and the drive plugin are
+     added by the exporter from asset.yaml. -->
+<sdf version="1.9">
+  <model name="tb3_burger_cam">
+    <link name="base_link">
+      <inertial>
+        <pose>-0.032 0 0.09 0 0 0</pose>
+        <mass>0.944</mass>
+        <inertia>
+          <ixx>0.00285</ixx><iyy>0.00285</iyy><izz>0.00270</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name="chassis">
+        <pose>-0.032 0 0.08 0 0 0</pose>
+        <geometry><box><size>0.14 0.14 0.13</size></box></geometry>
+      </collision>
+      <visual name="chassis_visual">
+        <pose>-0.032 0 0.08 0 0 0</pose>
+        <geometry><box><size>0.14 0.14 0.13</size></box></geometry>
+        <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
+      </visual>
+      <visual name="lidar_visual">
+        <pose>-0.032 0 0.172 0 0 0</pose>
+        <geometry><cylinder><radius>0.0508</radius><length>0.055</length></cylinder></geometry>
+        <material><ambient>0.15 0.15 0.15 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse></material>
+      </visual>
+      <collision name="caster">
+        <pose>-0.081 0 0.005 0 0 0</pose>
+        <geometry><sphere><radius>0.005</radius></sphere></geometry>
+        <surface><friction><ode><mu>0</mu><mu2>0</mu2></ode></friction></surface>
+      </collision>
+      <visual name="caster_visual">
+        <pose>-0.081 0 0.005 0 0 0</pose>
+        <geometry><sphere><radius>0.005</radius></sphere></geometry>
+      </visual>
+    </link>
+
+    <link name="wheel_left_link">
+      <pose>0 0.08 0.033 0 0 0</pose>
+      <inertial><mass>0.0285</mass>
+        <inertia><ixx>8.5e-6</ixx><iyy>1.55e-5</iyy><izz>8.5e-6</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+      </inertial>
+      <collision name="collision">
+        <pose>0 0 0 1.5707963 0 0</pose>
+        <geometry><cylinder><radius>0.033</radius><length>0.018</length></cylinder></geometry>
+        <surface><friction><ode><mu>1.2</mu><mu2>1.2</mu2></ode></friction></surface>
+      </collision>
+      <visual name="visual">
+        <pose>0 0 0 1.5707963 0 0</pose>
+        <geometry><cylinder><radius>0.033</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="wheel_right_link">
+      <pose>0 -0.08 0.033 0 0 0</pose>
+      <inertial><mass>0.0285</mass>
+        <inertia><ixx>8.5e-6</ixx><iyy>1.55e-5</iyy><izz>8.5e-6</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+      </inertial>
+      <collision name="collision">
+        <pose>0 0 0 1.5707963 0 0</pose>
+        <geometry><cylinder><radius>0.033</radius><length>0.018</length></cylinder></geometry>
+        <surface><friction><ode><mu>1.2</mu><mu2>1.2</mu2></ode></friction></surface>
+      </collision>
+      <visual name="visual">
+        <pose>0 0 0 1.5707963 0 0</pose>
+        <geometry><cylinder><radius>0.033</radius><length>0.018</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+      </visual>
+    </link>
+
+    <joint name="wheel_left_joint" type="revolute">
+      <parent>base_link</parent><child>wheel_left_link</child>
+      <axis><xyz>0 1 0</xyz><dynamics><damping>0.0005</damping></dynamics></axis>
+    </joint>
+    <joint name="wheel_right_joint" type="revolute">
+      <parent>base_link</parent><child>wheel_right_link</child>
+      <axis><xyz>0 1 0</xyz><dynamics><damping>0.0005</damping></dynamics></axis>
+    </joint>
+  </model>
+</sdf>

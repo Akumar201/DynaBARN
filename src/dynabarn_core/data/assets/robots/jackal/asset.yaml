@@ -18,6 +18,7 @@ drive:
 sensors:
   lidar:                        # Hokuyo UST-10LX, as on the BARN Jackal
     frame: base_scan
+    mount: [0.12, 0, 0.27]      # x y z [roll pitch yaw] from base_link
     samples: 720
     angle_min: -2.356
     angle_max: 2.356
@@ -27,6 +28,7 @@ sensors:
     noise_std: 0.0              # m   (UST-10LX spec: ~0.04)
   imu:
     frame: imu_link
+    mount: [0, 0, 0]
     rate_hz: 200
     gyro_noise_std: 0.0         # rad/s
     accel_noise_std: 0.0        # m/s^2
@@ -40,8 +42,8 @@ sensors:
   contact: {rate_hz: 50}
   ground_truth: {rate_hz: 50}
   cameras:                      # off by default: rendering is costly and needs OpenGL
-    - {name: rgb,   frame: front_camera, width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false}
-    - {name: depth, frame: front_camera, width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false, depth: true}
+    - {name: rgb,   frame: front_camera, mount: [0.215, 0, 0.2], width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false}
+    - {name: depth, frame: front_camera, mount: [0.215, 0, 0.2], width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false, depth: true}
 
 representations:
   mujoco:
@@ -54,3 +56,13 @@ representations:
       lidar_site: base_scan
       rgb_camera: front_cam
       depth_camera: front_cam
+  gazebo:
+    format: sdf
+    path: gazebo/model.sdf
+    drive:
+      wheel_separation: 0.525   # effective skid-steer track in Gazebo (DART), measured like the MuJoCo one
+    bindings:
+      root_link: base_link
+      left_joints: front_left_wheel rear_left_wheel
+      right_joints: front_right_wheel rear_right_wheel
+      contact_collision: chassis

@@ -43,14 +43,34 @@ def run_viewer(sim: MujocoSimulation, linear: float = 0.0, angular: float = 0.0,
         _setup_camera(v, sim, follow)
         _loop(v, sim, cmd, duration)
     finally:
-        # The viewer renders on its own thread. Exiting Python while that
-        # thread is still tearing down its X11 window segfaults inside libX11,
-        # so close the window and wait for the thread to finish first.
-        v.close()
-        deadline = time.monotonic() + 5.0
-        while v.is_running() and time.monotonic() < deadline:
-            time.sleep(0.02)
-        time.sleep(0.3)
+        _close(v)
+
+
+class ViewerHandle:
+    """A passive MuJoCo window that someone else steps (see Simulation.open_viewer)."""
+
+    def __init__(self, v) -> None:
+        self._v = v
+
+    def sync(self) -> None:
+        self._v.sync()
+
+    def is_running(self) -> bool:
+        return self._v.is_running()
+
+    def close(self) -> None:
+        _close(self._v)
+
+
+def _close(v) -> None:
+    # The viewer renders on its own thread. Exiting Python while that
+    # thread is still tearing down its X11 window segfaults inside libX11,
+    # so close the window and wait for the thread to finish first.
+    v.close()
+    deadline = time.monotonic() + 5.0
+    while v.is_running() and time.monotonic() < deadline:
+        time.sleep(0.02)
+    time.sleep(0.3)
 
 
 def _setup_camera(v, sim: MujocoSimulation, follow: bool) -> None:

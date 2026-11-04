@@ -19,6 +19,7 @@ drive:
 sensors:
   lidar:                        # LDS-01
     frame: base_scan
+    mount: [-0.032, 0, 0.172]   # x y z [roll pitch yaw] from base_link
     samples: 360
     angle_min: 0.0
     angle_max: 6.28
@@ -28,6 +29,7 @@ sensors:
     noise_std: 0.0              # m   (original Gazebo model: 0.01)
   imu:
     frame: imu_link
+    mount: [0, 0, 0]
     rate_hz: 200
     gyro_noise_std: 0.0         # rad/s (original Gazebo model: 2e-4)
     accel_noise_std: 0.0        # m/s^2 (original Gazebo model: 1.7e-2)
@@ -41,8 +43,8 @@ sensors:
   contact: {rate_hz: 50}
   ground_truth: {rate_hz: 50}   # exact world pose, for evaluation
   cameras:                      # off by default: rendering is costly and needs OpenGL
-    - {name: rgb,   frame: camera_link, width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false}
-    - {name: depth, frame: camera_link, width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false, depth: true}
+    - {name: rgb,   frame: camera_link, mount: [0.04, 0, 0.18], width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false}
+    - {name: depth, frame: camera_link, mount: [0.04, 0, 0.18], width: 640, height: 480, fov_deg: 60, rate_hz: 30, enabled: false, depth: true}
 
 # One entry per simulator. `bindings` maps dynabarn's generic names to the
 # names used inside that simulator's file, so you can drop in a different
@@ -58,5 +60,12 @@ representations:
       lidar_site: base_scan
       rgb_camera: rgb_cam
       depth_camera: rgb_cam
-  # gz:      {format: sdf, path: gz/model.sdf}          # milestone 2
+  gazebo:
+    format: sdf
+    path: gazebo/model.sdf
+    bindings:
+      root_link: base_link
+      left_joints: wheel_left_joint
+      right_joints: wheel_right_joint
+      contact_collision: chassis
   # isaac:   {format: usd, path: isaac/tb3_burger.usd}  # milestone 3

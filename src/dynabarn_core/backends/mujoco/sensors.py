@@ -22,7 +22,6 @@ from ...assets import (
     OdometrySpec,
     SensorSpec,
 )
-from ...core.geometry import Pose2D
 from ...core.messages import (
     Contacts,
     GroundTruth,
@@ -32,8 +31,8 @@ from ...core.messages import (
     LaserScan,
     Odometry,
     Pose3D,
-    Twist2D,
 )
+from ...core.odometry import OdometryModel
 from ..base import BackendError
 from .exporter import ACCEL_SENSOR, GYRO_SENSOR, IMU_SITE
 
@@ -50,10 +49,6 @@ def _quat_from_mat(mat: np.ndarray) -> tuple[float, float, float, float]:
     q = np.zeros(4)
     mujoco.mju_mat2Quat(q, np.ascontiguousarray(mat, dtype=np.float64).reshape(9))
     return tuple(float(v) for v in q)  # type: ignore[return-value]
-
-
-def _wrap(a: float) -> float:
-    return (a + math.pi) % (2 * math.pi) - math.pi
 
 
 class MjSensor:
@@ -214,45 +209,18 @@ class OdometrySensor(MjSensor):
 
     def reset(self) -> None:
         super().reset()
-        self.start: Pose2D | None = None
-        self.prev: tuple[float, float, float] | None = None  # time, left angle, right angle
-        self.x = self.y = self.yaw = 0.0
+        self.model = OdometryModel(self.spec, self.sim.robot.drive_for("mujoco"))
+
+    def reconfigured(self) -> None:
+        self.model.spec = self.spec
 
     def _wheel_angles(self) -> tuple[float, float]:
         q = self.sim.data.qpos
         return float(np.mean(q[self.left_q])), float(np.mean(q[self.right_q]))
 
     def read(self, t: float) -> Odometry:
-        s = self.spec
-        if self.start is None:
-            self.start = self.sim.robot_pose()
-        if s.source == "ground_truth":
-            p, st = self.sim.robot_pose(), self.start
-            dx, dy = p.x - st.x, p.y - st.y
-            c, sn = math.cos(st.yaw), math.sin(st.yaw)
-            pose = Pose2D(c * dx + sn * dy, -sn * dx + c * dy, _wrap(p.yaw - st.yaw))
-            return Odometry(pose, self.sim.robot_velocity(), "ground_truth")
-
-        # wheels: integrate wheel rotation (differential-drive model)
-        drive = self.sim.robot.drive
-        left, right = self._wheel_angles()
-        if self.prev is None:
-            self.prev = (t, left, right)
-            return Odometry(Pose2D(0.0, 0.0, 0.0), Twist2D(0.0, 0.0), "wheels")
-        t0, l0, r0 = self.prev
-        self.prev = (t, left, right)
-        dl, dr = (left - l0) * drive.wheel_radius, (right - r0) * drive.wheel_radius
-        ds, dth = (dl + dr) / 2.0, (dr - dl) / drive.wheel_separation
-        if s.linear_noise_std > 0:
-            ds += self.sim.rng.normal(0.0, s.linear_noise_std * abs(ds))
-        if s.angular_noise_std > 0:
-            dth += self.sim.rng.normal(0.0, s.angular_noise_std * (abs(dth) + abs(ds)))
-        mid = self.yaw + dth / 2.0
-        self.x += ds * math.cos(mid)
-        self.y += ds * math.sin(mid)
-        self.yaw = _wrap(self.yaw + dth)
-        dt = max(t - t0, _EPS)
-        return Odometry(Pose2D(self.x, self.y, self.yaw), Twist2D(ds / dt, dth / dt), "wheels")
+        wheels = self._wheel_angles() if self.spec.source == "wheels" else None
+        return self.model.update(t, self.sim.robot_pose(), self.sim.robot_velocity(), wheels, self.sim.rng)
 
 
 class JointStateSensor(MjSensor):
