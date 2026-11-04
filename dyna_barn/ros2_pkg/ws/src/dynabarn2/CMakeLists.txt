@@ -6,6 +6,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(gz_sim_vendor REQUIRED)
 find_package(gz-sim REQUIRED)
 find_package(gz_plugin_vendor REQUIRED)
@@ -33,15 +34,12 @@ install(DIRECTORY worlds data config launch
 install(PROGRAMS
   scripts/generate_movers.py
   scripts/generate_polynomial.py
+  scripts/generate_dynabarn2.py
   scripts/convert_dynabarn_classic.py
   scripts/trial_runner.py
   DESTINATION lib/${PROJECT_NAME}
 )
-install(FILES
-  scripts/world_sdf.py
-  scripts/polynomial_fit.py
-  DESTINATION lib/${PROJECT_NAME}
-)
+ament_python_install_package(dynabarn2_worlds)
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in")
 

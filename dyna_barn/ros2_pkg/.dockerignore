@@ -1,0 +1,6 @@
+ws/build
+ws/install
+ws/log
+ws/src/DynaBARN
+ws/src/dynabarn2/results
+**/__pycache__

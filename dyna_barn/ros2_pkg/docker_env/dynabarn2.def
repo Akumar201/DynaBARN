@@ -1,0 +1,11 @@
+# Apptainer/Singularity image, the format The BARN Challenge submits in. Build the Docker release
+# image first (see Dockerfile.release), then:
+#   apptainer build dynabarn2.sif dynabarn2.def
+#   apptainer run --nv dynabarn2.sif ros2 launch dynabarn2 run_trial.launch.py world_file:=dynabarn2/world_0
+Bootstrap: docker-daemon
+From: dynabarn2:latest
+
+%runscript
+    . /opt/ros/jazzy/setup.bash
+    . /opt/dynabarn2/install/setup.bash
+    exec "$@"

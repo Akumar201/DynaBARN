@@ -1,0 +1,23 @@
+# World generators and difficulty checks, installable without ROS:
+#   pip install ./dyna_barn/ros2_pkg/ws/src/dynabarn2
+# Running trials also needs the Gazebo plugin and the robot: use the Docker image or colcon.
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dynabarn2-worlds"
+version = "0.1.0"
+description = "World generators and difficulty checks for the DynaBARN II navigation benchmark"
+readme = "PYPI_README.md"
+requires-python = ">=3.10"
+license = {text = "BSD-3-Clause"}
+dependencies = ["numpy"]
+
+[project.scripts]
+dynabarn2-generate = "dynabarn2_worlds.generate_dynabarn2:main"
+dynabarn2-movers = "dynabarn2_worlds.generate_movers:main"
+dynabarn2-polynomial = "dynabarn2_worlds.generate_polynomial:main"
+
+[tool.setuptools]
+packages = ["dynabarn2_worlds"]

@@ -19,7 +19,8 @@ Inside `dynabarn2/`:
 | `src/ObstacleMover.cc` | Gazebo system that moves an obstacle along timed waypoints |
 | `worlds/dynabarn/` | The 60 original worlds, converted to Harmonic |
 | `worlds/dynabarn2/` | The DynaBARN II set and its `manifest.json` |
-| `scripts/` | World generators and `trial_runner.py` |
+| `dynabarn2_worlds/` | World generators and difficulty checks, as a Python package |
+| `scripts/` | `trial_runner.py` and `ros2 run` wrappers for the generators |
 | `launch/` | `run_trial.launch.py`, `nav2_baseline.launch.py` |
 | `config/robot.yaml` | Jackal with one front Hokuyo lidar |
 | `data/` | Original trajectories and the motion check against Gazebo Classic |
@@ -34,13 +35,52 @@ Inside `dynabarn2/`:
 
 ## Getting started
 
+Pick the route that fits what you want to do.
+
+| You want to | Use | Needs |
+| --- | --- | --- |
+| Run or submit a planner | Docker or Apptainer image | Docker, NVIDIA GPU |
+| Develop on the code in ROS 2 | Dev container or `colcon build` | Docker, or ROS 2 Jazzy |
+| Only generate worlds or compute difficulty | `pip install` | Python 3.10+ |
+
+### Ready-to-run image
+
+Run these from `dyna_barn/ros2_pkg/docker_env`. The first builds the base image, which takes a while.
+
+```bash
+docker compose build
+docker build -f Dockerfile.release -t dynabarn2 ..
+docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=all -v $PWD:/out dynabarn2 \
+  ros2 launch dynabarn2 run_trial.launch.py world_file:=dynabarn2/world_0 out_file:=/out/results.csv
+```
+
+The BARN Challenge submits in Apptainer/Singularity format:
+
+```bash
+apptainer build dynabarn2.sif dynabarn2.def
+apptainer run --nv dynabarn2.sif ros2 launch dynabarn2 run_trial.launch.py world_file:=dynabarn2/world_0
+```
+
+### ROS 2 development
+
 ```bash
 cd dyna_barn/ros2_pkg/docker_env
 ./start.sh --getin                     # build and start the container, then open a shell
 cd /ws && colcon build && source install/setup.bash
 ```
 
+On your own ROS 2 Jazzy machine, copy `dynabarn2` into a workspace, then run `rosdep install --from-paths src --ignore-src -y` and `colcon build`.
+
 If `nvidia-smi` fails in a long-running container with `Failed to initialize NVML`, restart the container.
+
+### Generators only
+
+```bash
+pip install ./dyna_barn/ros2_pkg/ws/src/dynabarn2
+dynabarn2-generate --save_dir worlds --per_cell 1 --families crowd --levels easy
+```
+
+This needs no ROS or Gazebo, but running the worlds needs the plugin from one of the routes above.
 
 ## Run a trial
 
@@ -54,6 +94,7 @@ ros2 launch dynabarn2 run_trial.launch.py world_file:=dynabarn2/world_0 planner:
 | `planner` | `mppi` | `mppi`, `dwb`, or `none` to run your own stack |
 | `gui` | `false` | Open the Gazebo GUI |
 | `out_file` | `results.csv` | CSV the result is appended to |
+| `reactive` | `off` | `off` for fixed motion, `yield` or `block` for obstacles that respond to the robot |
 | `timeout` | `100` | Time limit in seconds |
 
 Use `planner:=none` for your own navigation stack. Subscribe to `/sensors/lidar2d_0/scan` and `/platform/odom/filtered`, and publish `geometry_msgs/TwistStamped` on `/platform/cmd_vel`. The robot starts at (11, 0) facing −x and the goal is (−9, 0), 20 m ahead.
@@ -107,12 +148,12 @@ ros2 run dynabarn2 generate_polynomial.py --save_dir /tmp/poly --n_worlds 5 \
   --min_speed 0.5 --max_speed 1.5 --min_std 0.05 --max_std 0.2 --min_order 3 --max_order 6
 ```
 
-Use `--help` on any generator for the full list of options. For fair comparisons, use the fixed sets rather than newly generated worlds.
+Use `--help` on any generator for the full list of options. After `pip install`, the same tools are `dynabarn2-generate`, `dynabarn2-movers` and `dynabarn2-polynomial`. For fair comparisons, use the fixed sets rather than newly generated worlds.
 
 ## Baselines
 
 ```bash
-# <tag> <first world> <last world> <world prefix> <repeats> <parallel trials>
+# <tag> <first world> <last world> <world prefix> <repeats> <parallel trials> [off|yield|block]
 dyna_barn/ros2_pkg/ws/src/dynabarn2/tools/run_baselines.sh dynabarn2 0 59 dynabarn2/world_ 3 6
 ```
 

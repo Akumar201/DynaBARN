@@ -1,0 +1,22 @@
+# ------------------------------------------------------------
+# Ready-to-run DynaBARN II image: everything built, no workspace to mount.
+#
+#   docker compose -f docker-compose.yml build             # dev image, the base of this one
+#   docker build -f Dockerfile.release -t dynabarn2 ..     # run from docker_env/
+#   docker run --rm --gpus all -e NVIDIA_DRIVER_CAPABILITIES=all -v $PWD:/out dynabarn2 \
+#     ros2 launch dynabarn2 run_trial.launch.py world_file:=dynabarn2/world_0 out_file:=/out/r.csv
+# ------------------------------------------------------------
+FROM ros2-jazzy-gz:latest
+
+USER root
+RUN mkdir -p /opt/dynabarn2/src && chown -R dev:dev /opt/dynabarn2
+COPY --chown=dev:dev ws/src/dynabarn2 /opt/dynabarn2/src/dynabarn2
+
+USER dev
+WORKDIR /opt/dynabarn2
+RUN . /opt/ros/jazzy/setup.sh && colcon build \
+ && rm -rf build log src/dynabarn2/results
+
+COPY docker_env/entrypoint.release.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["bash"]

@@ -57,7 +57,7 @@ All reproduced from the original data or code. Worth confirming with Prof. Xiao 
 
 ## 5. Baselines
 
-Pending: see below once the run finishes.
+First pass in `results/`; repeats and reactive runs in progress.
 
 ## 6. Novelty for IROS/ICRA
 
