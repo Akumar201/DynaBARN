@@ -27,3 +27,6 @@ dyna_barn/ros2_pkg/ws/log
 # Generated DynaBARN plugins and worlds
 dyna_barn/ros2_pkg/ws/src/DynaBARN/plugins/
 dyna_barn/ros2_pkg/ws/src/DynaBARN/worlds/
+
+# Per-trial baseline files (merged results/<tag>.csv is what gets committed)
+dyna_barn/ros2_pkg/ws/src/dynabarn2/results/*/

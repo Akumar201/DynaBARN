@@ -113,7 +113,9 @@ class TrialRunner(Node):
 
         if self.t_start is None:
             if self.touched:
-                self.finish('collided', 0.0)
+                # Hit while still parked, before any planner could react. The ROS 1 runner ignored
+                # these; report them apart so they aren't blamed on the planner.
+                self.finish('hit_at_start', 0.0)
             elif math.dist(self.pos, self.start) >= START_RADIUS:
                 self.t_start = now
                 self.get_logger().info('Trial running')

@@ -15,6 +15,7 @@ from launch.substitutions import LaunchConfiguration
 
 SCAN_TOPIC = '/sensors/lidar2d_0/scan'
 CMD_VEL_TOPIC = '/platform/cmd_vel'
+ODOM_TOPIC = '/platform/odom/filtered'
 MAX_SPEED = 1.0                # m/s, for both baselines
 J100_FOOTPRINT = '[ [0.26, 0.22], [0.26, -0.22], [-0.26, -0.22], [-0.26, 0.22] ]'  # with fenders
 SENSOR_RANGE = 4.5             # m, how far obstacles are marked in the costmaps
@@ -70,15 +71,23 @@ def build_params(planner):
         scan['raytrace_max_range'] = SENSOR_RANGE + 1.0
 
     controller = params['controller_server']['ros__parameters']
+    # Without this the controller reads speed 0 forever: MPPI then can't exceed one acceleration
+    # step per cycle (about 0.2 m/s), and DWB samples around the wrong speed.
+    controller['odom_topic'] = ODOM_TOPIC
     controller['general_goal_checker']['stateful'] = True
     controller['failure_tolerance'] = 2.0
     controller['progress_checker']['movement_time_allowance'] = 30.0
     if planner == 'dwb':
         controller['FollowPath'] = dict(DWB_CONTROLLER)
     else:
-        controller['FollowPath']['vx_max'] = MAX_SPEED
-        controller['FollowPath']['vy_max'] = 0.0
-        controller['FollowPath']['visualize'] = False
+        mppi = controller['FollowPath']
+        mppi['vx_max'] = MAX_SPEED
+        mppi['vy_max'] = 0.0
+        mppi['visualize'] = False
+        # Clearpath's values suit 0.5 m/s. The path handed to MPPI must outreach its horizon
+        # (time_steps * model_dt * vx_max), and samples must spread enough to reach full speed.
+        mppi['prune_distance'] = 1.2 * mppi['time_steps'] * mppi['model_dt'] * MAX_SPEED
+        mppi['vx_std'] = 0.4
     return params
 
 
