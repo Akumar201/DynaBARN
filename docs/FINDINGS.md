@@ -115,6 +115,20 @@ Validity limits:
 - **Planners are similar.** Both are classical Nav2 controllers on near-default tuning, so they are
   weak probes for a ranking flip.
 
+## 5a. Start-time noise in the benchmark
+
+Obstacles start at sim time 0, but the robot starts when Nav2 is ready. Across the fixed-motion
+DynaBARN II trials the robot first moved between 2.6 and 10.6 s of sim time (SD 1.7 s). At about 1 m/s
+each repeat meets obstacles several metres from where the last one did, so a repeat of a world is not
+the same scene, and 39 of 120 world/planner pairs had mixed outcomes over 3 repeats. Any benchmark
+that starts obstacles before the planner is ready has this problem, and it is worth checking whether
+the original setup in Gazebo Classic does.
+
+Fix: `sync_start:=true` holds each obstacle at its first waypoint until the robot has moved 0.1 m. In a
+first test (8 worlds, 2 planners, 2 repeats) repeats mostly ended within 0.1 s of each other and 1 of
+16 pairs had mixed outcomes. That is a small sample with 2 repeats, not 3, so full runs will replace it.
+Results in section 5 predate this fix.
+
 ## 6. Novelty for IROS/ICRA
 
 Based on abstracts and search results, not full papers. Treat as leads, and confirm with Prof. Xiao.

@@ -41,6 +41,22 @@ DWB_CONTROLLER = {
     'RotateToGoal.lookahead_time': -1.0,
 }
 
+# Tracks the global path and stops when it is blocked, instead of steering around obstacles itself.
+RPP_CONTROLLER = {
+    'plugin': 'nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController',
+    'desired_linear_vel': MAX_SPEED,
+    'use_velocity_scaled_lookahead_dist': True, 'lookahead_time': 1.5,
+    'lookahead_dist': 0.6, 'min_lookahead_dist': 0.4, 'max_lookahead_dist': 1.5,
+    'transform_tolerance': 0.2, 'min_approach_linear_velocity': 0.05,
+    'approach_velocity_scaling_dist': 0.6, 'use_collision_detection': True,
+    'max_allowed_time_to_collision_up_to_carrot': 1.5,
+    'use_regulated_linear_velocity_scaling': True, 'use_cost_regulated_linear_velocity_scaling': True,
+    'regulated_linear_scaling_min_radius': 0.9, 'regulated_linear_scaling_min_speed': 0.25,
+    'use_rotate_to_heading': True, 'rotate_to_heading_min_angle': 0.785,
+    'rotate_to_heading_angular_vel': 1.8, 'max_angular_accel': 3.2, 'allow_reversing': False,
+    'max_robot_pose_search_dist': 10.0,
+}
+
 
 def build_params(planner):
     """Clearpath's J100 Nav2 parameters, turned into a mapless baseline."""
@@ -79,6 +95,8 @@ def build_params(planner):
     controller['progress_checker']['movement_time_allowance'] = 30.0
     if planner == 'dwb':
         controller['FollowPath'] = dict(DWB_CONTROLLER)
+    elif planner == 'rpp':
+        controller['FollowPath'] = dict(RPP_CONTROLLER)
     else:
         mppi = controller['FollowPath']
         mppi['vx_max'] = MAX_SPEED
@@ -107,7 +125,7 @@ def launch_setup(context):
 
 def generate_launch_description():
     return LaunchDescription([
-        DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'dwb']),
+        DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'dwb', 'rpp']),
         DeclareLaunchArgument('log_level', default_value='warn'),
         OpaqueFunction(function=launch_setup),
     ])

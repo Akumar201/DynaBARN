@@ -20,12 +20,18 @@ ARGUMENTS = [
     DeclareLaunchArgument('world_file', default_value='dynabarn/world_0',
                           description='World under share/dynabarn2/worlds, without .sdf'),
     DeclareLaunchArgument('gui', default_value='false', choices=['true', 'false']),
-    DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'dwb', 'none'],
+    DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'dwb', 'rpp', 'none'],
                           description='Baseline Nav2 controller; none leaves the robot to you'),
     DeclareLaunchArgument('nav_log_level', default_value='warn'),
     DeclareLaunchArgument('out_file', default_value='results.csv'),
     DeclareLaunchArgument('reactive', default_value='off', choices=['off', 'yield', 'block'],
                           description='How obstacles respond to the robot'),
+    DeclareLaunchArgument('sync_start', default_value='false', choices=['true', 'false'],
+                          description='Hold obstacles until the robot first moves'),
+    DeclareLaunchArgument('reactive_speed', default_value='1.0',
+                          description='Obstacle response speed next to the robot (m/s)'),
+    DeclareLaunchArgument('reactive_radius', default_value='2.5',
+                          description='Distance at which obstacles start to respond (m)'),
     DeclareLaunchArgument('timeout', default_value='100', description='Trial timeout (s)'),
     # Start/goal of the DynaBARN task, same as the BARN Challenge's dynamic worlds
     DeclareLaunchArgument('x', default_value='11.0'),
@@ -93,6 +99,9 @@ def generate_launch_description():
         on_exit=[Shutdown(reason='trial finished')])
     return LaunchDescription(ARGUMENTS + [
         SetEnvironmentVariable('DYNABARN_REACTIVE', LaunchConfiguration('reactive')),
+        SetEnvironmentVariable('DYNABARN_SYNC_START', LaunchConfiguration('sync_start')),
+        SetEnvironmentVariable('DYNABARN_REACTIVE_SPEED', LaunchConfiguration('reactive_speed')),
+        SetEnvironmentVariable('DYNABARN_REACTIVE_RADIUS', LaunchConfiguration('reactive_radius')),
         OpaqueFunction(function=simulation),
         OpaqueFunction(function=navigation),
         # Up before the robot spawns: TouchPlugin fires once, so no touch can be missed.
