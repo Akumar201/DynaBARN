@@ -5,7 +5,8 @@ Recomputes where each obstacle was at the trial's end time, from the world's way
 the free gap between the robot's centre and the nearest obstacle or wall surface. A real collision
 leaves a gap no bigger than the Jackal's half diagonal (about 0.35 m) plus a little latency.
 
-Usage: check_collisions.py results.csv worlds_dir
+Usage: check_collisions.py results.csv worlds_dir [synced]
+Pass synced for runs with sync_start:=true, where the obstacle clock starts when the robot moves.
 """
 import csv, math, os, re, statistics, sys
 import xml.etree.ElementTree as ET
@@ -52,7 +53,8 @@ def main():
     rows = [r for r in csv.DictReader(open(sys.argv[1])) if r['status'] == 'collided']
     gaps = []
     for r in rows:
-        x, y, t = float(r['final_x']), float(r['final_y']), float(r['end_sim_time'])
+        x, y = float(r['final_x']), float(r['final_y'])
+        t = float(r['time_s' if len(sys.argv) > 3 else 'end_sim_time'])
         name = r['world'].split('/', 1)[1] if r['world'].count('/') else r['world']
         obs = obstacles_at(os.path.join(sys.argv[2], name + '.sdf'), t)
         best, who = min((math.hypot(x - ox, y - oy) - rad, n) for n, ox, oy, rad in obs)

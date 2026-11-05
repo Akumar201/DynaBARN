@@ -57,6 +57,8 @@ All reproduced from the original data or code. Worth confirming with Prof. Xiao 
 
 ## 5. Baselines
 
+These runs predate the start-time fix in section 5a. Section 5b supersedes them.
+
 Setup: 1,440 trials. Nav2 MPPI and DWB, Jackal J100, 60 worlds, 3 repeats, 4 sets of runs. Worlds are
 the unit of analysis, and intervals are 95% bootstraps over worlds. 22 trials that were missing or
 never started were rerun on the same build, so no planner result was dropped. To reproduce:
@@ -120,14 +122,72 @@ Validity limits:
 Obstacles start at sim time 0, but the robot starts when Nav2 is ready. Across the fixed-motion
 DynaBARN II trials the robot first moved between 2.6 and 10.6 s of sim time (SD 1.7 s). At about 1 m/s
 each repeat meets obstacles several metres from where the last one did, so a repeat of a world is not
-the same scene, and 39 of 120 world/planner pairs had mixed outcomes over 3 repeats. Any benchmark
-that starts obstacles before the planner is ready has this problem, and it is worth checking whether
-the original setup in Gazebo Classic does.
+the same scene. Check whether the original setup in Gazebo Classic has the same problem: this port
+inherited the sim-time start, but it has not been measured on Classic.
 
-Fix: `sync_start:=true` holds each obstacle at its first waypoint until the robot has moved 0.1 m. In a
-first test (8 worlds, 2 planners, 2 repeats) repeats mostly ended within 0.1 s of each other and 1 of
-16 pairs had mixed outcomes. That is a small sample with 2 repeats, not 3, so full runs will replace it.
-Results in section 5 predate this fix.
+Fix: `sync_start:=true` holds each obstacle at its first waypoint until the robot has moved 0.1 m.
+
+DWB and MPPI over 3 repeats. A mixed pair is a world/planner pair whose repeats disagree on outcome.
+Spread is the median finish-time range in pairs that agree.
+
+| Runs | Mixed, unsynced | Mixed, synced | Spread, unsynced (s) | Spread, synced (s) |
+| --- | --- | --- | --- | --- |
+| Original worlds, fixed | 29/120 | 4/118 | 2.22 | 0.06 |
+| DynaBARN II, fixed | 39/120 | 22/120 | 0.62 | 0.08 |
+| DynaBARN II, block | 15/120 | 5/120 | 0.68 | 0.06 |
+| DynaBARN II, yield | 30/120 | 36/120 | 0.48 | 0.23 |
+
+Sync helps most on fixed motion and block. It does not help yield, where small timing differences
+still change how robot and obstacles interact. Pairs that remain mixed in fixed motion were not traced.
+
+## 5b. Synchronised experiment
+
+Setup: 2,880 planned Nav2 trials with `sync_start:=true`, 2,874 valid after one refill round of void
+or missing runs. Planners DWB, MPPI and RPP, which stops for obstacles rather than steering around them.
+60 worlds; 3 repeats for fixed, yield 1.0 and block 1.0 and for the original worlds; 1 repeat for the
+0.5 and 2.0 m/s response speeds. Reproduce with `tools/analyze_sync.py <package dir>`. These results
+replace section 5 for anything planner- or world-related. Section 5 stays as the unsynced record.
+
+| Mode | DWB (95% CI) | MPPI (95% CI) | RPP (95% CI) |
+| --- | --- | --- | --- |
+| Fixed | 0.33 (0.22-0.44) | 0.37 (0.26-0.49) | 0.38 (0.27-0.48) |
+| Yield 0.5 m/s | 0.43 (0.32-0.57) | 0.58 (0.45-0.70) | 0.58 (0.45-0.70) |
+| Yield 1.0 m/s | 0.59 (0.49-0.68) | 0.74 (0.63-0.84) | 0.68 (0.57-0.78) |
+| Yield 2.0 m/s | 0.91 (0.82-0.98) | 0.95 (0.88-1.00) | 0.93 (0.86-0.98) |
+| Block 0.5 m/s | 0.22 (0.12-0.33) | 0.25 (0.13-0.37) | 0.27 (0.15-0.38) |
+| Block 1.0 m/s | 0.09 (0.03-0.16) | 0.09 (0.03-0.17) | 0.12 (0.05-0.20) |
+| Block 2.0 m/s | 0.02 (0.00-0.05) | 0.03 (0.00-0.08) | 0.03 (0.00-0.08) |
+| Original worlds, fixed | 0.25 (0.14-0.36) | 0.21 (0.11-0.32) | 0.22 (0.12-0.33) |
+
+Findings:
+
+- **World difficulty order changes under block.** Spearman of world success against fixed motion is
+  0.48-0.50 for all planners, with upper bounds of 0.65-0.67, while one repeat matches the other two at
+  0.80-0.84 in block and 0.76-0.83 in fixed. The change exceeds the noise. Block success is low, so many
+  worlds tie at zero, which may lower this correlation and needs checking.
+- **Under yield this holds for MPPI only.** MPPI is 0.47 (0.29-0.62) against 0.80 within yield. DWB
+  (0.59 against 0.51) and RPP (0.60 against 0.64) are not separable from their own noise.
+- **Response speed is a strong dose-response.** Success rises with yield speed and falls with block
+  speed, for every planner. A replay score therefore has no single meaning without a stated obstacle
+  response. All these speeds are our choices, not fitted to real agents.
+- **No full ranking flip.** All planners are tied in fixed motion and in block. The clearest gap is DWB
+  behind MPPI under yield: -0.150 (-0.261 to -0.044) at 1.0 m/s and -0.150 (-0.283 to -0.033) at
+  0.5 m/s, gone at 2.0 m/s. It is uncorrected, and it shrinks when drift stalls (below) count as
+  arrivals: -0.100 (-0.194 to 0.000) and -0.117 (-0.233 to 0.000). Treat it as suggestive only.
+- **blind_collision stays weak,** -0.07 to -0.35 across modes and planners.
+
+Validity:
+
+- **Collisions.** 751 synced fixed-motion collisions all ended within 0.354 m of an obstacle, none at a
+  wall. Reactive hits have no equivalent check, because stored paths do not give reactive positions.
+- **Odometry drift stalls.** 46 of 49 synced timeouts ended within 3 m of the goal. In logged reruns
+  Nav2 reported success in the odom frame while the robot was 1.3-1.6 m from the goal in truth, outside
+  the 1 m radius, so it sat until timeout. These are localisation failures, not failures to get
+  through obstacles. They are concentrated in yield 1.0 (27), and the unsynced DWB and MPPI runs had
+  none on DynaBARN II. Why synced runs have them was not explained. 3 timeouts were not near the goal.
+  The table counts stalls as failures, so success is an underestimate where stalls are common.
+- **Block solvability is still unproven.** Block at 2.0 m/s is close to 0 and may be near-impossible.
+- **RPP tuning.** RPP settings were picked for this robot and speed and not tuned against the worlds.
 
 ## 6. Novelty for IROS/ICRA
 
@@ -141,10 +201,12 @@ Based on abstracts and search results, not full papers. Treat as leads, and conf
   navigation, PopNavShift (arXiv 2609.21838) shows the pedestrian model matters.
 - **The apparent gap:** no study found that tests this for lidar-based metric ground navigation such
   as BARN. This is the most promising angle, but absence from a search is not proof.
-- **Our result so far:** obstacle response moved scores strongly, but DWB and MPPI did not swap places
-  (section 5). "Replay flips rankings" is not supported by this data. The defensible claim today is
-  smaller: replay scores depend heavily on an unstated assumption about how obstacles respond.
-- **To test the stronger claim:** add planners that behave differently (learned, or one that relies
-  on obstacles moving out of its way), sweep the response rules, and use more repeats.
+- **Our result so far (section 5b):** planners did not swap places, so "replay flips rankings" is not
+  supported. Two claims are supported: world difficulty under replay does not carry over to adversarial
+  obstacles, and scores change steadily with obstacle response speed.
+- **A second, independent contribution:** the start-time fix (section 5a) cuts mixed outcomes on the
+  original worlds from 29/120 to 4/118. It is cheap to adopt and may matter to the challenge itself.
+- **To make the reactive claim stronger:** rule out the zero-tie effect on block, use response models
+  grounded in real agents, and add a learned planner, since all three here are classical Nav2 controllers.
 - **Challenge context:** DynaBARN results did not count toward the 2025 ranking, and sources conflict
   on 2026. A sound, comparable dynamic benchmark may be a real need for the challenge.
