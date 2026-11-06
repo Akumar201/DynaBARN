@@ -37,6 +37,7 @@ install(PROGRAMS
   scripts/generate_dynabarn2.py
   scripts/convert_dynabarn_classic.py
   scripts/trial_runner.py
+  scripts/obstacle_predictor.py
   DESTINATION lib/${PROJECT_NAME}
 )
 ament_python_install_package(dynabarn2_worlds)

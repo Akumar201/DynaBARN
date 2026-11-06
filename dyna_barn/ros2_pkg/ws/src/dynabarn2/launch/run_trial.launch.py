@@ -20,7 +20,7 @@ ARGUMENTS = [
     DeclareLaunchArgument('world_file', default_value='dynabarn/world_0',
                           description='World under share/dynabarn2/worlds, without .sdf'),
     DeclareLaunchArgument('gui', default_value='false', choices=['true', 'false']),
-    DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'dwb', 'rpp', 'none'],
+    DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'mppi_pred', 'dwb', 'rpp', 'none'],
                           description='Baseline Nav2 controller; none leaves the robot to you'),
     DeclareLaunchArgument('nav_log_level', default_value='warn'),
     DeclareLaunchArgument('out_file', default_value='results.csv'),

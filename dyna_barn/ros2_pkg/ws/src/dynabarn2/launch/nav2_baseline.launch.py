@@ -9,9 +9,10 @@ import tempfile
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
 
 SCAN_TOPIC = '/sensors/lidar2d_0/scan'
 CMD_VEL_TOPIC = '/platform/cmd_vel'
@@ -86,6 +87,17 @@ def build_params(planner):
         scan['obstacle_max_range'] = SENSOR_RANGE
         scan['raytrace_max_range'] = SENSOR_RANGE + 1.0
 
+    if planner == 'mppi_pred':
+        # Marks come from obstacle_predictor. Infinite returns must clear, or old predictions in open
+        # space would stay in the costmap.
+        layer = local['voxel_layer']
+        layer['scan']['inf_is_valid'] = True
+        layer['observation_sources'] = 'scan predicted'
+        layer['predicted'] = {'topic': '/predicted_obstacles', 'data_type': 'PointCloud2',
+                              'marking': True, 'clearing': False, 'min_obstacle_height': 0.0,
+                              'max_obstacle_height': 2.0, 'obstacle_max_range': SENSOR_RANGE + 2.0,
+                              'obstacle_min_range': 0.0}
+
     controller = params['controller_server']['ros__parameters']
     # Without this the controller reads speed 0 forever: MPPI then can't exceed one acceleration
     # step per cycle (about 0.2 m/s), and DWB samples around the wrong speed.
@@ -116,7 +128,12 @@ def launch_setup(context):
         yaml.safe_dump(build_params(planner), f)
     launch_file = os.path.join(get_package_share_directory('nav2_bringup'), 'launch',
                                'navigation_launch.py')
-    return [IncludeLaunchDescription(
+    extra = []
+    if planner == 'mppi_pred':
+        # A dead predictor leaves plain MPPI running, which would pass as a valid result. End the trial.
+        extra.append(Node(package='dynabarn2', executable='obstacle_predictor.py', output='screen',
+                          on_exit=[Shutdown(reason='obstacle_predictor exited')]))
+    return extra + [IncludeLaunchDescription(
         PythonLaunchDescriptionSource(launch_file),
         launch_arguments={'use_sim_time': 'true', 'params_file': f.name,
                           'use_composition': 'False', 'autostart': 'true',
@@ -125,7 +142,7 @@ def launch_setup(context):
 
 def generate_launch_description():
     return LaunchDescription([
-        DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'dwb', 'rpp']),
+        DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'mppi_pred', 'dwb', 'rpp']),
         DeclareLaunchArgument('log_level', default_value='warn'),
         OpaqueFunction(function=launch_setup),
     ])
