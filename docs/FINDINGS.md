@@ -161,12 +161,14 @@ replace section 5 for anything planner- or world-related. Section 5 stays as the
 
 Findings:
 
-- **World difficulty order changes under block.** Spearman of world success against fixed motion is
-  0.48-0.50 for all planners, with upper bounds of 0.65-0.67, while one repeat matches the other two at
-  0.80-0.84 in block and 0.76-0.83 in fixed. The change exceeds the noise. Block success is low, so many
-  worlds tie at zero, which may lower this correlation and needs checking.
-- **Under yield this holds for MPPI only.** MPPI is 0.47 (0.29-0.62) against 0.80 within yield. DWB
-  (0.59 against 0.51) and RPP (0.60 against 0.64) are not separable from their own noise.
+- **Block does not show reordering (corrected).** Spearman against fixed motion is 0.48-0.50, but
+  `tools/tie_check.py` gets the same value (null means 0.46-0.54) when block keeps fixed motion's world
+  order exactly and only compresses success towards zero. No world passed only under block for any
+  planner, and only 1 world-planner pair improved. Block at 1.0 m/s looks uniformly harder, not
+  reordered. An earlier version of these notes claimed otherwise, and that claim is withdrawn.
+- **Yield may reorder worlds, not settled.** Spearman (0.47-0.60) is below the same null (0.55-0.74,
+  p <= 0.003), and 5-16 worlds per planner go from 0/3 to 3/3 passes. Within-yield repeat agreement is
+  low for DWB (0.51) and RPP (0.64), so only MPPI (0.80) is clean, and drift stalls add noise here.
 - **Response speed is a strong dose-response.** Success rises with yield speed and falls with block
   speed, for every planner. A replay score therefore has no single meaning without a stated obstacle
   response. All these speeds are our choices, not fitted to real agents.
@@ -202,11 +204,12 @@ Based on abstracts and search results, not full papers. Treat as leads, and conf
 - **The apparent gap:** no study found that tests this for lidar-based metric ground navigation such
   as BARN. This is the most promising angle, but absence from a search is not proof.
 - **Our result so far (section 5b):** planners did not swap places, so "replay flips rankings" is not
-  supported. Two claims are supported: world difficulty under replay does not carry over to adversarial
-  obstacles, and scores change steadily with obstacle response speed.
+  supported. Scores change steadily with obstacle response speed. World reordering is possible under
+  yield and not supported under block, where floor effects explain the correlation.
 - **A second, independent contribution:** the start-time fix (section 5a) cuts mixed outcomes on the
   original worlds from 29/120 to 4/118. It is cheap to adopt and may matter to the challenge itself.
-- **To make the reactive claim stronger:** rule out the zero-tie effect on block, use response models
-  grounded in real agents, and add a learned planner, since all three here are classical Nav2 controllers.
+- **To make the reactive claim stronger:** test a planner that relies on predicting obstacle motion, use
+  response models grounded in real agents, and add a learned planner, since all three here are classical
+  Nav2 controllers.
 - **Challenge context:** DynaBARN results did not count toward the 2025 ranking, and sources conflict
   on 2026. A sound, comparable dynamic benchmark may be a real need for the challenge.
