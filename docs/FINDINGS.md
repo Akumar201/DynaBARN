@@ -191,6 +191,71 @@ Validity:
 - **Block solvability is still unproven.** Block at 2.0 m/s is close to 0 and may be near-impossible.
 - **RPP tuning.** RPP settings were picked for this robot and speed and not tuned against the worlds.
 
+## 5c. Prediction planners and a ranking reversal
+
+Two planners were added, using a lidar tracker that needs no simulator truth
+(`scripts/obstacle_predictor.py`). On 4 worlds with `mppi_pred`, 98-100% of sampled moving tracks matched
+a true obstacle, with median velocity error of 0.15-0.19 m/s. The evaluation has not been repeated at scale.
+
+- `mppi_pred` marks swept future positions in the local costmap. It has no notion of time.
+- `mppi_critic` adds `src/PredictionCritic.cc`, an MPPI critic that compares each trajectory at step k
+  with each track's constant-velocity position k steps ahead. Settings are first-pick values, untuned.
+
+All runs use `sync_start:=true` and 3 repeats on 60 worlds, 180 trials per planner and mode. After refill,
+`mppi_critic` has 171 valid yield and 176 valid block trials, and `mppi_pred` has 176, 172 and 178
+(fixed, yield, block). Reproduce gaps with `tools/compare_planners.py <package dir> <planner>`.
+
+Success:
+
+| Obstacles | DWB | MPPI | RPP | mppi_pred | mppi_critic |
+| --- | --- | --- | --- | --- | --- |
+| Fixed | 0.33 | 0.37 | 0.38 | 0.39 | 0.48 |
+| Yield 1.0 | 0.59 | 0.74 | 0.68 | 0.75 | 0.69 |
+| Block 1.0 | 0.09 | 0.09 | 0.12 | 0.11 | 0.28 |
+
+BARN score:
+
+| Obstacles | DWB | MPPI | RPP | mppi_pred | mppi_critic |
+| --- | --- | --- | --- | --- | --- |
+| Fixed | 0.160 | 0.170 | 0.180 | 0.165 | 0.183 |
+| Yield 1.0 | 0.286 | 0.328 | 0.322 | 0.296 | 0.253 |
+| Block 1.0 | 0.044 | 0.043 | 0.055 | 0.046 | 0.111 |
+
+`mppi_critic` minus the other planner, paired by world (95% CI):
+
+| Obstacles | Success vs MPPI | Score vs MPPI | Score vs RPP |
+| --- | --- | --- | --- |
+| Fixed | +0.106 (-0.006 to +0.217) | +0.013 (-0.037 to +0.062) | +0.003 (-0.046 to +0.052) |
+| Yield 1.0 | -0.053 (-0.169 to +0.058) | -0.075 (-0.126 to -0.024) | -0.069 (-0.118 to -0.019) |
+| Block 1.0 | +0.186 (+0.096 to +0.282) | +0.067 (+0.033 to +0.105) | +0.054 (+0.019 to +0.092) |
+
+Findings:
+
+- **The ranking reverses with obstacle response, on the BARN score.** `mppi_critic` ties MPPI and RPP on
+  replay, is worse than both under yield, and better than both under block. Replay alone hides both.
+- **The change in its advantage is significant.** Its success gain over MPPI falls by -0.158 (-0.275 to
+  -0.042) from fixed to yield, and by -0.153 (-0.272 to -0.039) when drift stalls count as arrivals, so
+  stalls do not explain it. Its score gain falls by -0.088 (-0.137 to -0.041) and rises by +0.054 (+0.003
+  to +0.104) for block.
+- **Timed prediction is what matters.** `mppi_pred` shows no gain, while `mppi_critic` uses the same
+  tracker. Its fixed-motion success gain is suggestive: the CI touches zero as run, and clears it
+  (+0.022 to +0.256) with stalls counted.
+- **Prediction costs time.** Median success time is 24.4 s against 20.5 s for MPPI on fixed motion, which
+  is why its success lead does not carry over to score.
+- **Hard worlds do not improve:** 0.07 against 0.12 on fixed, and 0.34 against 0.58 under yield.
+
+Why yield hurts is a hypothesis, not a result. `mppi_critic`'s yield collisions come much later (median
+34 s against 11 s for MPPI), which fits a robot that hesitates around obstacles that are moving away, then
+gets caught. This needs a direct test, for instance logging speed and critic cost through a trial.
+
+Limits:
+
+- Many comparisons were made and intervals are uncorrected, though the yield drop in success was the
+  stated test before the run. The score reversal was noticed afterwards, so it needs confirming.
+- One prediction design, one tuning and one set of reactive rules. Yield and block are bounding cases.
+- All planners are compared on one set of worlds, with no separate holdout.
+- Block solvability remains unproven.
+
 ## 6. Novelty for IROS/ICRA
 
 Based on abstracts and search results, not full papers. Treat as leads, and confirm with Prof. Xiao.
@@ -203,13 +268,15 @@ Based on abstracts and search results, not full papers. Treat as leads, and conf
   navigation, PopNavShift (arXiv 2609.21838) shows the pedestrian model matters.
 - **The apparent gap:** no study found that tests this for lidar-based metric ground navigation such
   as BARN. This is the most promising angle, but absence from a search is not proof.
-- **Our result so far (section 5b):** planners did not swap places, so "replay flips rankings" is not
-  supported. Scores change steadily with obstacle response speed. World reordering is possible under
-  yield and not supported under block, where floor effects explain the correlation.
+- **Our result so far (section 5c):** a time-aware prediction planner ties the baselines on replay by BARN
+  score, loses to them when obstacles yield, and beats them when obstacles block. This is the strongest
+  candidate for the novelty claim: ranking depends on obstacle response, and replay shows neither effect.
+  It differs from the first guess, since reactive motion in general does not defeat prediction.
+- **Earlier work (section 5b):** the classical planners alone showed no flip, and response speed moves
+  scores steadily. World reordering is possible under yield, and floor effects explain block.
 - **A second, independent contribution:** the start-time fix (section 5a) cuts mixed outcomes on the
   original worlds from 29/120 to 4/118. It is cheap to adopt and may matter to the challenge itself.
-- **To make the reactive claim stronger:** test a planner that relies on predicting obstacle motion, use
-  response models grounded in real agents, and add a learned planner, since all three here are classical
-  Nav2 controllers.
+- **To make the claim stronger:** confirm the reversal on new worlds and response speeds, explain why
+  yield hurts, use response models grounded in real agents, and add a learned planner.
 - **Challenge context:** DynaBARN results did not count toward the 2025 ranking, and sources conflict
   on 2026. A sound, comparable dynamic benchmark may be a real need for the challenge.
