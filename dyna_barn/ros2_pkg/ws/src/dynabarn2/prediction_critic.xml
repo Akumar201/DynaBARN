@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="dynabarn_prediction_critic">
+    <class type="mppi::critics::PredictionCritic" base_class_type="mppi::critics::CriticFunction">
+      <description>Scores MPPI trajectories against predicted obstacle positions at each step</description>
+    </class>
+  </library>
+</class_libraries>

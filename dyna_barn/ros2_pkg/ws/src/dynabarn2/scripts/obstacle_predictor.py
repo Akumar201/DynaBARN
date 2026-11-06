@@ -3,7 +3,8 @@
 
 Scan points are clustered into objects, tracked in the odom frame with an alpha-beta filter, and each
 moving track is extrapolated at constant velocity. The swept positions go out as a point cloud that
-the local costmap marks as obstacles, so an unmodified controller plans around them.
+the local costmap marks as obstacles, so an unmodified controller plans around them, and the tracks
+go out on predicted_tracks for PredictionCritic, which compares them with trajectories step by step.
 
 It uses the lidar only, with no simulator truth, so it can run on a real robot.
 """
@@ -18,7 +19,7 @@ from rclpy.qos import qos_profile_sensor_data
 from rclpy.time import Time
 from sensor_msgs.msg import LaserScan, PointCloud2
 from sensor_msgs_py import point_cloud2
-from std_msgs.msg import Header
+from std_msgs.msg import Float64MultiArray, Header
 from tf2_ros import Buffer, TransformException, TransformListener
 
 MAX_RANGE = 6.0        # m, ignore returns further than this
@@ -92,6 +93,7 @@ class Predictor(Node):
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, self)
         self.output = self.create_publisher(PointCloud2, 'predicted_obstacles', 10)
+        self.track_output = self.create_publisher(Float64MultiArray, 'predicted_tracks', 10)
         # Scans can arrive before their transform, so they wait here until it does.
         self.pending = deque(maxlen=20)
         log_path = os.environ.get('DYNABARN_TRACK_LOG')  # evaluation only: where to record tracks
@@ -152,6 +154,10 @@ class Predictor(Node):
             for track in moving:
                 self.log.write(f'{now:.3f} {track.x:.3f} {track.y:.3f} {track.vx:.3f} {track.vy:.3f}\n')
             self.log.flush()
+        data = [now]
+        for track in moving:
+            data += [track.x, track.y, track.vx, track.vy]
+        self.track_output.publish(Float64MultiArray(data=data))
         self.output.publish(point_cloud2.create_cloud_xyz32(Header(stamp=stamp, frame_id=FRAME), points))
 
 

@@ -118,6 +118,9 @@ def build_params(planner):
         # (time_steps * model_dt * vx_max), and samples must spread enough to reach full speed.
         mppi['prune_distance'] = 1.2 * mppi['time_steps'] * mppi['model_dt'] * MAX_SPEED
         mppi['vx_std'] = 0.4
+        if planner == 'mppi_critic':
+            mppi['critics'] = mppi['critics'] + ['PredictionCritic']
+            mppi['PredictionCritic'] = {'enabled': True}
     return params
 
 
@@ -129,7 +132,7 @@ def launch_setup(context):
     launch_file = os.path.join(get_package_share_directory('nav2_bringup'), 'launch',
                                'navigation_launch.py')
     extra = []
-    if planner == 'mppi_pred':
+    if planner in ('mppi_pred', 'mppi_critic'):
         # A dead predictor leaves plain MPPI running, which would pass as a valid result. End the trial.
         extra.append(Node(package='dynabarn2', executable='obstacle_predictor.py', output='screen',
                           on_exit=[Shutdown(reason='obstacle_predictor exited')]))
@@ -142,7 +145,7 @@ def launch_setup(context):
 
 def generate_launch_description():
     return LaunchDescription([
-        DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'mppi_pred', 'dwb', 'rpp']),
+        DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'mppi_pred', 'mppi_critic', 'dwb', 'rpp']),
         DeclareLaunchArgument('log_level', default_value='warn'),
         OpaqueFunction(function=launch_setup),
     ])

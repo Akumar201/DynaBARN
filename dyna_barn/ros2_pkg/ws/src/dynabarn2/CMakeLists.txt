@@ -13,6 +13,10 @@ find_package(gz_plugin_vendor REQUIRED)
 find_package(gz-plugin REQUIRED COMPONENTS register)
 find_package(gz_math_vendor REQUIRED)
 find_package(gz-math REQUIRED)
+find_package(nav2_mppi_controller REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # Gazebo system plugin that moves obstacles along timed waypoints
 add_library(DynaBarnObstacleMover SHARED src/ObstacleMover.cc)
@@ -22,7 +26,13 @@ target_link_libraries(DynaBarnObstacleMover
   gz-math::gz-math
 )
 
-install(TARGETS DynaBarnObstacleMover
+# MPPI critic that scores trajectories against predicted obstacle positions
+add_library(dynabarn_prediction_critic SHARED src/PredictionCritic.cc)
+target_compile_options(dynabarn_prediction_critic PRIVATE -O3)
+ament_target_dependencies(dynabarn_prediction_critic nav2_mppi_controller pluginlib rclcpp std_msgs)
+pluginlib_export_plugin_description_file(nav2_mppi_controller prediction_critic.xml)
+
+install(TARGETS DynaBarnObstacleMover dynabarn_prediction_critic
   LIBRARY DESTINATION lib
 )
 
