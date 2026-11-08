@@ -280,3 +280,15 @@ Based on abstracts and search results, not full papers. Treat as leads, and conf
   yield hurts, use response models grounded in real agents, and add a learned planner.
 - **Challenge context:** DynaBARN results did not count toward the 2025 ranking, and sources conflict
   on 2026. A sound, comparable dynamic benchmark may be a real need for the challenge.
+
+## 5d. Held-out confirmation (pre-registered 2026-11-08, before any trial)
+
+New world set `worlds/dynabarn2_holdout` (generator seed 2027, 60 worlds, same families and levels; never run before).
+Runs: synced start, reactive speed 1.0 m/s, planners mppi, rpp, mppi_critic, 2 repeats, block then yield.
+Settings frozen: the critic parameters of section 5c, unchanged.
+
+Predictions, by BARN score with worlds as the unit and 95% bootstrap intervals (tools/compare_planners.py):
+1. Block: mppi_critic beats both MPPI and RPP (interval above zero).
+2. Yield: mppi_critic is worse than both MPPI and RPP (interval below zero).
+3. The critic's gain over MPPI is larger under block than under yield (interval of the difference above zero).
+Any prediction that fails is reported as failed.

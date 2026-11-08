@@ -1,0 +1,1828 @@
+<?xml version="1.0" ?>
+<sdf version="1.10">
+  <world name="default">
+    <physics name="default_physics" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry></collision>
+        <visual name="visual"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry><material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+    </model>
+
+    <model name="back_wall">
+      <static>true</static>
+      <pose>-10 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.5 20 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.5 20 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+    </model>
+    <model name="top_wall">
+      <static>true</static>
+      <pose>0 10 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>20 0.5 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>20 0.5 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+    </model>
+    <model name="bottom_wall">
+      <static>true</static>
+      <pose>0 -10 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>20 0.5 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>20 0.5 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+    </model>
+
+    <model name="obs_0">
+      <pose>0.9917 -6.7480 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.075588</ixx><iyy>1.075588</iyy><izz>0.484510</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.3112907909400947</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.3112907909400947</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 0.9917 -6.7480 0.5000</waypoint>
+        <waypoint>0.2000 0.9926 -6.7618 0.5000</waypoint>
+        <waypoint>0.4500 0.9944 -6.8079 0.5000</waypoint>
+        <waypoint>0.9500 1.0426 -6.9449 0.5000</waypoint>
+        <waypoint>1.7000 1.1699 -7.2027 0.5000</waypoint>
+        <waypoint>2.9500 1.4066 -7.6813 0.5000</waypoint>
+        <waypoint>3.0000 1.4161 -7.6769 0.5000</waypoint>
+        <waypoint>4.0500 1.6079 -7.2601 0.5000</waypoint>
+        <waypoint>5.0000 1.8363 -6.9147 0.5000</waypoint>
+        <waypoint>5.7000 1.9871 -6.6503 0.5000</waypoint>
+        <waypoint>7.1500 2.2549 -6.0774 0.5000</waypoint>
+        <waypoint>7.8000 2.4152 -5.8445 0.5000</waypoint>
+        <waypoint>8.7500 2.6998 -5.5437 0.5000</waypoint>
+        <waypoint>9.2000 2.8535 -5.4238 0.5000</waypoint>
+        <waypoint>9.8500 3.0993 -5.2863 0.5000</waypoint>
+        <waypoint>10.6000 3.4056 -5.1764 0.5000</waypoint>
+        <waypoint>11.3500 3.7210 -5.0923 0.5000</waypoint>
+        <waypoint>11.7000 3.8602 -5.0332 0.5000</waypoint>
+        <waypoint>12.9500 4.3054 -4.7283 0.5000</waypoint>
+        <waypoint>14.0000 4.6995 -4.4947 0.5000</waypoint>
+        <waypoint>16.9500 5.6983 -3.6793 0.5000</waypoint>
+        <waypoint>17.7000 5.9212 -3.4511 0.5000</waypoint>
+        <waypoint>18.2500 5.7691 -3.4185 0.5000</waypoint>
+        <waypoint>18.9000 5.5248 -3.3868 0.5000</waypoint>
+        <waypoint>19.3500 5.3392 -3.3903 0.5000</waypoint>
+        <waypoint>20.5000 4.8486 -3.4481 0.5000</waypoint>
+        <waypoint>20.9000 4.6813 -3.4939 0.5000</waypoint>
+        <waypoint>21.8500 4.2947 -3.6419 0.5000</waypoint>
+        <waypoint>24.2000 3.3473 -4.0437 0.5000</waypoint>
+        <waypoint>25.2500 2.9834 -4.3105 0.5000</waypoint>
+        <waypoint>26.0500 2.6778 -4.4683 0.5000</waypoint>
+        <waypoint>26.5000 2.5225 -4.5816 0.5000</waypoint>
+        <waypoint>27.0000 2.3916 -4.7451 0.5000</waypoint>
+        <waypoint>28.2000 2.1471 -5.1988 0.5000</waypoint>
+        <waypoint>28.8500 1.9922 -5.4367 0.5000</waypoint>
+        <waypoint>29.2500 1.8835 -5.5729 0.5000</waypoint>
+        <waypoint>29.7500 1.7249 -5.7206 0.5000</waypoint>
+        <waypoint>30.2000 1.5668 -5.8348 0.5000</waypoint>
+        <waypoint>30.5500 1.4313 -5.8974 0.5000</waypoint>
+        <waypoint>30.9500 1.2669 -5.9374 0.5000</waypoint>
+        <waypoint>32.7500 0.4928 -5.9306 0.5000</waypoint>
+        <waypoint>34.2500 -0.1637 -5.9024 0.5000</waypoint>
+        <waypoint>35.6000 -0.7537 -5.8497 0.5000</waypoint>
+        <waypoint>36.1000 -0.9596 -5.7898 0.5000</waypoint>
+        <waypoint>36.7500 -1.1930 -5.6428 0.5000</waypoint>
+        <waypoint>37.4000 -1.3864 -5.4435 0.5000</waypoint>
+        <waypoint>37.7500 -1.4614 -5.3155 0.5000</waypoint>
+        <waypoint>38.4000 -1.5598 -5.0578 0.5000</waypoint>
+        <waypoint>39.2500 -1.7228 -4.7275 0.5000</waypoint>
+        <waypoint>39.8000 -1.8558 -4.5286 0.5000</waypoint>
+        <waypoint>40.1500 -1.9597 -4.4213 0.5000</waypoint>
+        <waypoint>40.5000 -2.0827 -4.3410 0.5000</waypoint>
+        <waypoint>40.9000 -2.2366 -4.2693 0.5000</waypoint>
+        <waypoint>41.8000 -2.6047 -4.1429 0.5000</waypoint>
+        <waypoint>43.3000 -3.2084 -3.8890 0.5000</waypoint>
+        <waypoint>43.8000 -3.4178 -3.8447 0.5000</waypoint>
+        <waypoint>44.5000 -3.7173 -3.8516 0.5000</waypoint>
+        <waypoint>45.3500 -4.0703 -3.9453 0.5000</waypoint>
+        <waypoint>45.8500 -4.2710 -4.0276 0.5000</waypoint>
+        <waypoint>47.2500 -4.8201 -4.2989 0.5000</waypoint>
+        <waypoint>48.4000 -5.2908 -4.4682 0.5000</waypoint>
+        <waypoint>49.6000 -5.7100 -4.7721 0.5000</waypoint>
+        <waypoint>50.7500 -6.1300 -5.0481 0.5000</waypoint>
+        <waypoint>51.1500 -6.2481 -5.1711 0.5000</waypoint>
+        <waypoint>51.9000 -6.4314 -5.4368 0.5000</waypoint>
+        <waypoint>52.1500 -6.5024 -5.5160 0.5000</waypoint>
+        <waypoint>52.4500 -6.6040 -5.5807 0.5000</waypoint>
+        <waypoint>52.8000 -6.7373 -5.6209 0.5000</waypoint>
+        <waypoint>53.4000 -6.9849 -5.6526 0.5000</waypoint>
+        <waypoint>53.9000 -7.1984 -5.6517 0.5000</waypoint>
+        <waypoint>54.3000 -7.3671 -5.6226 0.5000</waypoint>
+        <waypoint>55.1500 -7.7235 -5.5277 0.5000</waypoint>
+        <waypoint>56.4000 -8.2185 -5.3022 0.5000</waypoint>
+        <waypoint>57.3000 -8.5180 -5.0564 0.5000</waypoint>
+        <waypoint>57.7500 -8.6804 -4.9496 0.5000</waypoint>
+        <waypoint>57.8000 -8.6813 -4.9383 0.5000</waypoint>
+        <waypoint>58.5000 -8.4125 -4.7966 0.5000</waypoint>
+        <waypoint>59.2500 -8.1007 -4.7035 0.5000</waypoint>
+        <waypoint>60.3000 -7.6472 -4.6464 0.5000</waypoint>
+        <waypoint>61.0500 -7.3201 -4.6259 0.5000</waypoint>
+        <waypoint>61.4500 -7.1572 -4.5789 0.5000</waypoint>
+        <waypoint>61.8000 -7.0303 -4.5065 0.5000</waypoint>
+        <waypoint>62.2000 -6.9033 -4.3970 0.5000</waypoint>
+        <waypoint>62.8000 -6.7325 -4.2055 0.5000</waypoint>
+        <waypoint>63.1500 -6.6567 -4.0777 0.5000</waypoint>
+        <waypoint>63.6000 -6.5956 -3.8977 0.5000</waypoint>
+        <waypoint>64.1000 -6.5604 -3.6872 0.5000</waypoint>
+        <waypoint>64.5500 -6.5643 -3.4953 0.5000</waypoint>
+        <waypoint>65.0500 -6.5993 -3.2832 0.5000</waypoint>
+        <waypoint>65.4500 -6.6594 -3.1238 0.5000</waypoint>
+        <waypoint>66.9000 -6.9510 -2.5680 0.5000</waypoint>
+        <waypoint>69.2000 -7.2838 -1.6179 0.5000</waypoint>
+        <waypoint>70.3000 -7.4807 -1.1781 0.5000</waypoint>
+        <waypoint>71.0500 -7.5621 -0.8628 0.5000</waypoint>
+        <waypoint>71.5500 -7.5655 -0.6491 0.5000</waypoint>
+        <waypoint>72.0000 -7.5180 -0.4662 0.5000</waypoint>
+        <waypoint>72.5500 -7.4232 -0.2514 0.5000</waypoint>
+        <waypoint>73.8500 -7.1074 0.2141 0.5000</waypoint>
+        <waypoint>74.2000 -7.0123 0.3337 0.5000</waypoint>
+        <waypoint>75.2500 -6.6958 0.6639 0.5000</waypoint>
+        <waypoint>76.3000 -6.4204 1.0305 0.5000</waypoint>
+        <waypoint>77.6500 -6.0116 1.4549 0.5000</waypoint>
+        <waypoint>77.9500 -5.9073 1.5320 0.5000</waypoint>
+        <waypoint>79.3500 -5.3861 1.8440 0.5000</waypoint>
+        <waypoint>80.3500 -5.0634 2.1323 0.5000</waypoint>
+        <waypoint>80.7000 -4.9403 2.2204 0.5000</waypoint>
+        <waypoint>81.3000 -4.7073 2.3317 0.5000</waypoint>
+        <waypoint>81.8000 -4.4989 2.3738 0.5000</waypoint>
+        <waypoint>82.7000 -4.1128 2.3620 0.5000</waypoint>
+        <waypoint>83.3500 -3.8342 2.3173 0.5000</waypoint>
+        <waypoint>83.9000 -3.6151 2.2285 0.5000</waypoint>
+        <waypoint>84.8500 -3.2515 2.0340 0.5000</waypoint>
+        <waypoint>85.3000 -3.0669 1.9724 0.5000</waypoint>
+        <waypoint>85.7500 -2.8756 1.9346 0.5000</waypoint>
+        <waypoint>86.3000 -2.6391 1.9324 0.5000</waypoint>
+        <waypoint>87.3000 -2.2072 1.9844 0.5000</waypoint>
+        <waypoint>89.3500 -1.3156 2.0494 0.5000</waypoint>
+        <waypoint>90.0000 -1.0383 2.0050 0.5000</waypoint>
+        <waypoint>91.6000 -0.3630 1.8255 0.5000</waypoint>
+        <waypoint>92.4500 -0.0154 1.6944 0.5000</waypoint>
+        <waypoint>93.0500 0.2172 1.5742 0.5000</waypoint>
+        <waypoint>93.7000 0.4489 1.4113 0.5000</waypoint>
+        <waypoint>94.3500 0.6586 1.2203 0.5000</waypoint>
+        <waypoint>94.7000 0.7533 1.1028 0.5000</waypoint>
+        <waypoint>95.3500 0.8921 0.8597 0.5000</waypoint>
+        <waypoint>96.4500 1.1044 0.4288 0.5000</waypoint>
+        <waypoint>97.0000 1.1804 0.2024 0.5000</waypoint>
+        <waypoint>97.4000 1.1933 0.0334 0.5000</waypoint>
+        <waypoint>98.0000 1.1629 -0.2205 0.5000</waypoint>
+        <waypoint>99.0500 1.0324 -0.6550 0.5000</waypoint>
+        <waypoint>99.5500 0.9393 -0.8517 0.5000</waypoint>
+        <waypoint>100.7000 0.6917 -1.2880 0.5000</waypoint>
+        <waypoint>101.5000 0.4912 -1.5708 0.5000</waypoint>
+        <waypoint>102.0500 0.3676 -1.7757 0.5000</waypoint>
+        <waypoint>102.7000 0.2452 -2.0316 0.5000</waypoint>
+        <waypoint>103.1500 0.1810 -2.2168 0.5000</waypoint>
+        <waypoint>103.5000 0.1507 -2.3652 0.5000</waypoint>
+        <waypoint>105.2000 0.0650 -3.1000 0.5000</waypoint>
+        <waypoint>106.1000 0.0468 -3.4940 0.5000</waypoint>
+        <waypoint>106.7000 0.0177 -3.7548 0.5000</waypoint>
+        <waypoint>107.4500 0.0158 -4.0822 0.5000</waypoint>
+        <waypoint>108.8000 0.0641 -4.6717 0.5000</waypoint>
+        <waypoint>109.2000 0.1052 -4.8403 0.5000</waypoint>
+        <waypoint>109.5000 0.1546 -4.9590 0.5000</waypoint>
+        <waypoint>110.4000 0.3947 -5.2534 0.5000</waypoint>
+        <waypoint>111.5000 0.7615 -5.5567 0.5000</waypoint>
+        <waypoint>111.8000 0.8491 -5.6500 0.5000</waypoint>
+        <waypoint>112.6000 1.0459 -5.9321 0.5000</waypoint>
+        <waypoint>113.4000 1.1911 -6.2471 0.5000</waypoint>
+        <waypoint>114.0500 1.2701 -6.5180 0.5000</waypoint>
+        <waypoint>115.3000 1.3429 -7.0585 0.5000</waypoint>
+        <waypoint>115.9000 1.3376 -7.3198 0.5000</waypoint>
+        <waypoint>116.7500 1.2831 -7.6873 0.5000</waypoint>
+        <waypoint>117.9500 1.1960 -7.1739 0.5000</waypoint>
+        <waypoint>119.1000 1.0659 -6.6882 0.5000</waypoint>
+        <waypoint>119.5500 0.9898 -6.5083 0.5000</waypoint>
+        <waypoint>120.3500 0.8145 -6.2078 0.5000</waypoint>
+        <waypoint>122.3000 0.4358 -5.4453 0.5000</waypoint>
+        <waypoint>122.9000 0.3664 -5.1955 0.5000</waypoint>
+        <waypoint>125.4500 0.1260 -4.1038 0.5000</waypoint>
+        <waypoint>125.9000 0.0646 -3.9171 0.5000</waypoint>
+        <waypoint>126.2500 -0.0134 -3.7925 0.5000</waypoint>
+        <waypoint>127.4500 -0.3794 -3.4369 0.5000</waypoint>
+        <waypoint>128.8000 -0.7633 -2.9929 0.5000</waypoint>
+        <waypoint>129.3000 -0.9230 -2.8443 0.5000</waypoint>
+        <waypoint>129.6500 -1.0451 -2.7540 0.5000</waypoint>
+        <waypoint>130.1000 -1.2193 -2.6840 0.5000</waypoint>
+        <waypoint>131.0500 -1.6165 -2.6247 0.5000</waypoint>
+        <waypoint>132.4000 -2.2008 -2.5596 0.5000</waypoint>
+        <waypoint>132.7000 -2.3272 -2.5299 0.5000</waypoint>
+        <waypoint>133.0500 -2.4658 -2.4730 0.5000</waypoint>
+        <waypoint>134.6000 -3.0616 -2.1587 0.5000</waypoint>
+        <waypoint>135.7500 -3.4658 -1.8622 0.5000</waypoint>
+        <waypoint>136.3000 -3.6387 -1.6976 0.5000</waypoint>
+        <waypoint>137.3000 -3.8978 -1.3498 0.5000</waypoint>
+        <waypoint>138.3500 -4.0628 -0.9282 0.5000</waypoint>
+        <waypoint>139.0000 -4.0959 -0.6520 0.5000</waypoint>
+        <waypoint>139.6500 -4.0528 -0.3783 0.5000</waypoint>
+        <waypoint>140.5000 -3.9127 -0.0428 0.5000</waypoint>
+        <waypoint>141.1000 -3.8355 0.2055 0.5000</waypoint>
+        <waypoint>141.5000 -3.8189 0.3754 0.5000</waypoint>
+        <waypoint>141.8500 -3.8377 0.5207 0.5000</waypoint>
+        <waypoint>142.2000 -3.8919 0.6537 0.5000</waypoint>
+        <waypoint>142.6500 -3.9882 0.8165 0.5000</waypoint>
+        <waypoint>144.8000 -4.5263 1.5823 0.5000</waypoint>
+        <waypoint>146.2000 -4.8310 2.1149 0.5000</waypoint>
+        <waypoint>146.9500 -5.0189 2.3801 0.5000</waypoint>
+        <waypoint>148.6500 -5.3607 3.0371 0.5000</waypoint>
+        <waypoint>149.2000 -5.4254 3.2656 0.5000</waypoint>
+        <waypoint>150.1500 -5.4570 3.6761 0.5000</waypoint>
+        <waypoint>151.3500 -5.4141 4.1984 0.5000</waypoint>
+        <waypoint>151.7500 -5.3759 4.3669 0.5000</waypoint>
+        <waypoint>152.3500 -5.2631 4.5970 0.5000</waypoint>
+        <waypoint>153.0500 -5.0779 4.8347 0.5000</waypoint>
+        <waypoint>153.5000 -4.9310 4.9605 0.5000</waypoint>
+        <waypoint>154.7500 -4.4899 5.2791 0.5000</waypoint>
+        <waypoint>155.7000 -4.1940 5.5693 0.5000</waypoint>
+        <waypoint>156.2500 -4.0744 5.7724 0.5000</waypoint>
+        <waypoint>156.9500 -3.9904 6.0587 0.5000</waypoint>
+        <waypoint>157.3000 -3.9326 6.1972 0.5000</waypoint>
+        <waypoint>158.3500 -3.6968 6.5835 0.5000</waypoint>
+        <waypoint>159.3000 -3.5020 6.9495 0.5000</waypoint>
+        <waypoint>160.3000 -3.2661 7.3183 0.5000</waypoint>
+        <waypoint>160.7000 -3.1556 7.4520 0.5000</waypoint>
+        <waypoint>161.0500 -3.0438 7.5533 0.5000</waypoint>
+        <waypoint>161.3500 -2.9365 7.6227 0.5000</waypoint>
+        <waypoint>161.7500 -2.7800 7.6864 0.5000</waypoint>
+        <waypoint>162.5000 -2.4765 7.5782 0.5000</waypoint>
+        <waypoint>163.7000 -1.9944 7.3725 0.5000</waypoint>
+        <waypoint>164.5500 -1.6922 7.1618 0.5000</waypoint>
+        <waypoint>165.3500 -1.4176 6.9451 0.5000</waypoint>
+        <waypoint>165.7500 -1.2690 6.8565 0.5000</waypoint>
+        <waypoint>166.2000 -1.0874 6.7969 0.5000</waypoint>
+        <waypoint>166.7500 -0.8543 6.7683 0.5000</waypoint>
+        <waypoint>167.2000 -0.6626 6.7819 0.5000</waypoint>
+        <waypoint>168.3500 -0.1727 6.8740 0.5000</waypoint>
+        <waypoint>169.4000 0.2823 6.8922 0.5000</waypoint>
+        <waypoint>170.5500 0.7726 6.9986 0.5000</waypoint>
+        <waypoint>171.3500 1.1027 7.1143 0.5000</waypoint>
+        <waypoint>171.8000 1.2823 7.1942 0.5000</waypoint>
+        <waypoint>173.0500 1.7245 7.5062 0.5000</waypoint>
+        <waypoint>173.3500 1.8398 7.5630 0.5000</waypoint>
+        <waypoint>173.6000 1.9409 7.5916 0.5000</waypoint>
+        <waypoint>173.9500 2.0863 7.6055 0.5000</waypoint>
+        <waypoint>174.4000 2.2771 7.5978 0.5000</waypoint>
+        <waypoint>176.5500 3.2061 7.5054 0.5000</waypoint>
+        <waypoint>176.9500 3.3735 7.4605 0.5000</waypoint>
+        <waypoint>177.3000 3.5085 7.3966 0.5000</waypoint>
+        <waypoint>177.7000 3.6504 7.3012 0.5000</waypoint>
+        <waypoint>178.1500 3.7923 7.1707 0.5000</waypoint>
+        <waypoint>178.5000 3.8844 7.0527 0.5000</waypoint>
+        <waypoint>178.9000 3.9681 6.9036 0.5000</waypoint>
+        <waypoint>179.9500 4.1262 6.4784 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_1">
+      <pose>0.2624 -3.1055 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.125565</ixx><iyy>1.125565</iyy><izz>0.584463</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.34189566007784056</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.34189566007784056</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 0.2624 -3.1055 0.5000</waypoint>
+        <waypoint>0.2500 0.2899 -3.0948 0.5000</waypoint>
+        <waypoint>0.5000 0.3576 -3.0685 0.5000</waypoint>
+        <waypoint>0.8000 0.4757 -3.0368 0.5000</waypoint>
+        <waypoint>1.1500 0.6459 -3.0244 0.5000</waypoint>
+        <waypoint>1.6000 0.8924 -3.0368 0.5000</waypoint>
+        <waypoint>2.3000 1.3056 -3.0656 0.5000</waypoint>
+        <waypoint>3.0500 1.7556 -3.1333 0.5000</waypoint>
+        <waypoint>3.7500 2.1787 -3.1378 0.5000</waypoint>
+        <waypoint>4.1000 2.3822 -3.1780 0.5000</waypoint>
+        <waypoint>4.5500 2.6203 -3.2909 0.5000</waypoint>
+        <waypoint>5.6000 3.1654 -3.6204 0.5000</waypoint>
+        <waypoint>7.0500 3.9560 -4.0396 0.5000</waypoint>
+        <waypoint>7.5000 4.1693 -4.2126 0.5000</waypoint>
+        <waypoint>8.3000 4.4863 -4.5785 0.5000</waypoint>
+        <waypoint>8.6500 4.6530 -4.7044 0.5000</waypoint>
+        <waypoint>9.0500 4.8683 -4.7990 0.5000</waypoint>
+        <waypoint>9.7500 5.2756 -4.9027 0.5000</waypoint>
+        <waypoint>10.0000 5.4253 -4.9242 0.5000</waypoint>
+        <waypoint>10.3500 5.6352 -4.9224 0.5000</waypoint>
+        <waypoint>12.9500 7.2220 -4.7580 0.5000</waypoint>
+        <waypoint>13.8500 7.7632 -4.6419 0.5000</waypoint>
+        <waypoint>14.2000 7.9556 -4.5605 0.5000</waypoint>
+        <waypoint>14.2500 7.9631 -4.5422 0.5000</waypoint>
+        <waypoint>14.5500 7.8797 -4.4110 0.5000</waypoint>
+        <waypoint>15.2500 7.6169 -4.1117 0.5000</waypoint>
+        <waypoint>15.9000 7.3259 -3.8518 0.5000</waypoint>
+        <waypoint>16.5000 7.0229 -3.6506 0.5000</waypoint>
+        <waypoint>16.9000 6.8306 -3.4999 0.5000</waypoint>
+        <waypoint>17.3500 6.6319 -3.3091 0.5000</waypoint>
+        <waypoint>17.7000 6.5019 -3.1407 0.5000</waypoint>
+        <waypoint>18.2500 6.5200 -2.7695 0.5000</waypoint>
+        <waypoint>18.9000 6.5456 -2.3541 0.5000</waypoint>
+        <waypoint>19.8500 6.6277 -1.7665 0.5000</waypoint>
+        <waypoint>21.1500 6.6860 -0.9650 0.5000</waypoint>
+        <waypoint>22.3500 6.7595 -0.2264 0.5000</waypoint>
+        <waypoint>22.8500 6.8126 0.0767 0.5000</waypoint>
+        <waypoint>23.8000 6.9688 0.6384 0.5000</waypoint>
+        <waypoint>24.6500 7.0328 1.1568 0.5000</waypoint>
+        <waypoint>25.0000 7.0372 1.3721 0.5000</waypoint>
+        <waypoint>27.0500 6.9897 2.6387 0.5000</waypoint>
+        <waypoint>27.9000 7.0354 3.1598 0.5000</waypoint>
+        <waypoint>28.7500 7.0577 3.6832 0.5000</waypoint>
+        <waypoint>29.1500 7.0422 3.9283 0.5000</waypoint>
+        <waypoint>29.5000 6.9946 4.1349 0.5000</waypoint>
+        <waypoint>30.1500 6.8417 4.4977 0.5000</waypoint>
+        <waypoint>30.6500 6.6823 4.7576 0.5000</waypoint>
+        <waypoint>31.1500 6.5038 5.0076 0.5000</waypoint>
+        <waypoint>31.7000 6.2708 5.2507 0.5000</waypoint>
+        <waypoint>33.0500 5.6435 5.7990 0.5000</waypoint>
+        <waypoint>33.5500 5.4420 6.0300 0.5000</waypoint>
+        <waypoint>33.8000 5.3682 6.1601 0.5000</waypoint>
+        <waypoint>34.9000 5.1092 6.7736 0.5000</waypoint>
+        <waypoint>35.3000 4.9848 6.9845 0.5000</waypoint>
+        <waypoint>35.7500 4.8217 7.2070 0.5000</waypoint>
+        <waypoint>36.0500 4.6964 7.3403 0.5000</waypoint>
+        <waypoint>36.3500 4.5531 7.4494 0.5000</waypoint>
+        <waypoint>36.6500 4.3964 7.5380 0.5000</waypoint>
+        <waypoint>37.1500 4.1188 7.6581 0.5000</waypoint>
+        <waypoint>37.8000 3.7493 7.5090 0.5000</waypoint>
+        <waypoint>38.2000 3.5317 7.3958 0.5000</waypoint>
+        <waypoint>38.5000 3.3848 7.2895 0.5000</waypoint>
+        <waypoint>38.8000 3.2687 7.1577 0.5000</waypoint>
+        <waypoint>39.2000 3.1599 6.9524 0.5000</waypoint>
+        <waypoint>40.0000 2.9795 6.5056 0.5000</waypoint>
+        <waypoint>40.4000 2.8641 6.2909 0.5000</waypoint>
+        <waypoint>41.0000 2.6517 5.9920 0.5000</waypoint>
+        <waypoint>41.7000 2.3649 5.6768 0.5000</waypoint>
+        <waypoint>42.2500 2.2008 5.3890 0.5000</waypoint>
+        <waypoint>42.7500 2.0834 5.1090 0.5000</waypoint>
+        <waypoint>43.8500 1.9194 4.4585 0.5000</waypoint>
+        <waypoint>44.9500 1.8723 3.7852 0.5000</waypoint>
+        <waypoint>45.8500 1.9256 3.2353 0.5000</waypoint>
+        <waypoint>46.1000 1.9263 3.0830 0.5000</waypoint>
+        <waypoint>46.4000 1.8983 2.9053 0.5000</waypoint>
+        <waypoint>47.0500 1.7786 2.5329 0.5000</waypoint>
+        <waypoint>47.4000 1.7335 2.3252 0.5000</waypoint>
+        <waypoint>47.9500 1.7033 1.9912 0.5000</waypoint>
+        <waypoint>48.3500 1.7182 1.7488 0.5000</waypoint>
+        <waypoint>48.6500 1.7618 1.5742 0.5000</waypoint>
+        <waypoint>49.1500 1.8633 1.2886 0.5000</waypoint>
+        <waypoint>50.1000 2.1371 0.7761 0.5000</waypoint>
+        <waypoint>50.5000 2.2794 0.5775 0.5000</waypoint>
+        <waypoint>51.1500 2.5660 0.3089 0.5000</waypoint>
+        <waypoint>51.5000 2.7099 0.1516 0.5000</waypoint>
+        <waypoint>51.8500 2.8232 -0.0257 0.5000</waypoint>
+        <waypoint>52.2500 2.9170 -0.2468 0.5000</waypoint>
+        <waypoint>52.5500 2.9636 -0.4208 0.5000</waypoint>
+        <waypoint>52.9000 2.9783 -0.6280 0.5000</waypoint>
+        <waypoint>53.3000 2.9520 -0.8644 0.5000</waypoint>
+        <waypoint>54.1000 2.8593 -1.3402 0.5000</waypoint>
+        <waypoint>54.3500 2.8564 -1.4907 0.5000</waypoint>
+        <waypoint>54.6000 2.8760 -1.6381 0.5000</waypoint>
+        <waypoint>54.6500 2.8668 -1.6613 0.5000</waypoint>
+        <waypoint>54.9500 2.7069 -1.7563 0.5000</waypoint>
+        <waypoint>55.8000 2.2288 -1.9696 0.5000</waypoint>
+        <waypoint>56.0500 2.0991 -2.0470 0.5000</waypoint>
+        <waypoint>56.9500 1.6804 -2.3957 0.5000</waypoint>
+        <waypoint>58.0000 1.1518 -2.7630 0.5000</waypoint>
+        <waypoint>58.7500 0.8047 -3.0673 0.5000</waypoint>
+        <waypoint>59.1500 0.6398 -3.2473 0.5000</waypoint>
+        <waypoint>60.2000 0.2941 -3.7863 0.5000</waypoint>
+        <waypoint>62.0500 -0.2735 -4.7786 0.5000</waypoint>
+        <waypoint>62.4500 -0.3795 -5.0016 0.5000</waypoint>
+        <waypoint>63.3500 -0.5800 -5.5196 0.5000</waypoint>
+        <waypoint>63.8000 -0.7001 -5.7699 0.5000</waypoint>
+        <waypoint>65.0500 -1.1305 -6.4089 0.5000</waypoint>
+        <waypoint>65.4000 -1.2348 -6.5967 0.5000</waypoint>
+        <waypoint>65.9000 -1.3523 -6.8787 0.5000</waypoint>
+        <waypoint>66.2000 -1.3983 -7.0543 0.5000</waypoint>
+        <waypoint>66.5500 -1.4219 -7.2639 0.5000</waypoint>
+        <waypoint>67.2000 -1.4325 -7.6581 0.5000</waypoint>
+        <waypoint>68.3000 -1.4075 -6.9812 0.5000</waypoint>
+        <waypoint>69.8000 -1.2983 -6.0600 0.5000</waypoint>
+        <waypoint>70.3500 -1.2238 -5.7293 0.5000</waypoint>
+        <waypoint>71.2000 -1.0493 -5.2351 0.5000</waypoint>
+        <waypoint>71.9500 -0.8336 -4.8270 0.5000</waypoint>
+        <waypoint>72.4000 -0.6729 -4.6030 0.5000</waypoint>
+        <waypoint>73.6000 -0.1849 -4.0478 0.5000</waypoint>
+        <waypoint>73.8500 -0.0984 -3.9217 0.5000</waypoint>
+        <waypoint>74.1000 -0.0309 -3.7869 0.5000</waypoint>
+        <waypoint>74.3500 0.0150 -3.6452 0.5000</waypoint>
+        <waypoint>74.7500 0.0567 -3.4098 0.5000</waypoint>
+        <waypoint>75.6000 0.0998 -2.8934 0.5000</waypoint>
+        <waypoint>76.2500 0.1682 -2.5008 0.5000</waypoint>
+        <waypoint>76.6000 0.1844 -2.2873 0.5000</waypoint>
+        <waypoint>77.4000 0.1271 -1.8049 0.5000</waypoint>
+        <waypoint>78.6000 -0.0077 -1.0776 0.5000</waypoint>
+        <waypoint>79.3000 -0.0378 -0.6467 0.5000</waypoint>
+        <waypoint>80.1000 -0.0278 -0.1532 0.5000</waypoint>
+        <waypoint>80.9000 0.0658 0.3287 0.5000</waypoint>
+        <waypoint>81.3500 0.1010 0.6033 0.5000</waypoint>
+        <waypoint>81.7000 0.1064 0.8178 0.5000</waypoint>
+        <waypoint>81.9500 0.0856 0.9666 0.5000</waypoint>
+        <waypoint>82.3000 0.0135 1.1584 0.5000</waypoint>
+        <waypoint>82.6500 -0.0970 1.3306 0.5000</waypoint>
+        <waypoint>83.1000 -0.2732 1.5324 0.5000</waypoint>
+        <waypoint>84.0000 -0.6698 1.9056 0.5000</waypoint>
+        <waypoint>84.8500 -0.9942 2.3113 0.5000</waypoint>
+        <waypoint>85.2500 -1.1119 2.5219 0.5000</waypoint>
+        <waypoint>86.3000 -1.2670 3.1334 0.5000</waypoint>
+        <waypoint>86.7000 -1.3100 3.3740 0.5000</waypoint>
+        <waypoint>87.2000 -1.3210 3.6790 0.5000</waypoint>
+        <waypoint>87.9000 -1.2962 4.1073 0.5000</waypoint>
+        <waypoint>88.2000 -1.3068 4.2895 0.5000</waypoint>
+        <waypoint>88.5500 -1.3566 4.4933 0.5000</waypoint>
+        <waypoint>88.9500 -1.4547 4.7110 0.5000</waypoint>
+        <waypoint>90.4000 -1.9549 5.4339 0.5000</waypoint>
+        <waypoint>90.6500 -2.0508 5.5535 0.5000</waypoint>
+        <waypoint>90.8500 -2.1388 5.6339 0.5000</waypoint>
+        <waypoint>91.1000 -2.2615 5.7146 0.5000</waypoint>
+        <waypoint>91.4500 -2.4476 5.8070 0.5000</waypoint>
+        <waypoint>92.7000 -3.1664 6.0446 0.5000</waypoint>
+        <waypoint>92.9000 -3.2707 6.1030 0.5000</waypoint>
+        <waypoint>93.1500 -3.3828 6.1961 0.5000</waypoint>
+        <waypoint>93.6000 -3.5351 6.4058 0.5000</waypoint>
+        <waypoint>94.5000 -3.7680 6.8920 0.5000</waypoint>
+        <waypoint>94.9000 -3.8981 7.0966 0.5000</waypoint>
+        <waypoint>95.3000 -4.0540 7.2823 0.5000</waypoint>
+        <waypoint>95.8500 -4.3037 7.5035 0.5000</waypoint>
+        <waypoint>96.2000 -4.4510 7.6578 0.5000</waypoint>
+        <waypoint>96.7000 -4.6631 7.4424 0.5000</waypoint>
+        <waypoint>97.0500 -4.8339 7.3178 0.5000</waypoint>
+        <waypoint>97.6500 -5.1552 7.1458 0.5000</waypoint>
+        <waypoint>98.1000 -5.4141 7.0636 0.5000</waypoint>
+        <waypoint>98.4000 -5.5915 7.0483 0.5000</waypoint>
+        <waypoint>98.7500 -5.8008 7.0567 0.5000</waypoint>
+        <waypoint>99.8500 -6.4630 7.1656 0.5000</waypoint>
+        <waypoint>100.2500 -6.7060 7.1762 0.5000</waypoint>
+        <waypoint>100.8500 -7.0694 7.1378 0.5000</waypoint>
+        <waypoint>101.9000 -7.7012 7.0104 0.5000</waypoint>
+        <waypoint>103.4500 -8.6553 6.9393 0.5000</waypoint>
+        <waypoint>104.8000 -7.8330 6.8529 0.5000</waypoint>
+        <waypoint>105.1500 -7.6185 6.8634 0.5000</waypoint>
+        <waypoint>105.7500 -7.2545 6.9162 0.5000</waypoint>
+        <waypoint>106.3500 -6.8957 7.0018 0.5000</waypoint>
+        <waypoint>106.9500 -6.5509 7.1305 0.5000</waypoint>
+        <waypoint>108.1500 -5.8797 7.4445 0.5000</waypoint>
+        <waypoint>108.8500 -5.5014 7.6555 0.5000</waypoint>
+        <waypoint>109.3500 -5.2389 7.4989 0.5000</waypoint>
+        <waypoint>109.6500 -5.0714 7.4273 0.5000</waypoint>
+        <waypoint>111.6500 -3.8888 7.1067 0.5000</waypoint>
+        <waypoint>112.3000 -3.5069 6.9813 0.5000</waypoint>
+        <waypoint>112.7000 -3.2887 6.8718 0.5000</waypoint>
+        <waypoint>113.1000 -3.0890 6.7329 0.5000</waypoint>
+        <waypoint>114.0500 -2.6612 6.3392 0.5000</waypoint>
+        <waypoint>114.8000 -2.3719 5.9811 0.5000</waypoint>
+        <waypoint>115.7500 -2.0685 5.4807 0.5000</waypoint>
+        <waypoint>116.2500 -1.9365 5.2021 0.5000</waypoint>
+        <waypoint>116.9000 -1.7979 4.8282 0.5000</waypoint>
+        <waypoint>117.3500 -1.6694 4.5851 0.5000</waypoint>
+        <waypoint>118.3000 -1.3261 4.1154 0.5000</waypoint>
+        <waypoint>119.4500 -0.9538 3.5154 0.5000</waypoint>
+        <waypoint>120.1000 -0.6941 3.2140 0.5000</waypoint>
+        <waypoint>122.1000 0.0810 2.2520 0.5000</waypoint>
+        <waypoint>122.4500 0.2239 2.0898 0.5000</waypoint>
+        <waypoint>123.4500 0.6624 1.6564 0.5000</waypoint>
+        <waypoint>124.0500 0.9367 1.4077 0.5000</waypoint>
+        <waypoint>124.5000 1.1629 1.2489 0.5000</waypoint>
+        <waypoint>125.2500 1.5743 1.0488 0.5000</waypoint>
+        <waypoint>125.5500 1.7166 0.9417 0.5000</waypoint>
+        <waypoint>126.0000 1.8823 0.7368 0.5000</waypoint>
+        <waypoint>127.2500 2.3075 0.1057 0.5000</waypoint>
+        <waypoint>128.1000 2.6670 -0.2600 0.5000</waypoint>
+        <waypoint>128.6000 2.8507 -0.5024 0.5000</waypoint>
+        <waypoint>128.9000 2.9361 -0.6628 0.5000</waypoint>
+        <waypoint>129.2000 3.0015 -0.8322 0.5000</waypoint>
+        <waypoint>129.7500 3.0673 -1.1572 0.5000</waypoint>
+        <waypoint>130.1500 3.0690 -1.3979 0.5000</waypoint>
+        <waypoint>130.9500 2.9686 -1.8676 0.5000</waypoint>
+        <waypoint>131.4000 2.9415 -2.1393 0.5000</waypoint>
+        <waypoint>131.7000 2.9596 -2.3177 0.5000</waypoint>
+        <waypoint>132.9000 3.0994 -3.0318 0.5000</waypoint>
+        <waypoint>133.4500 3.1990 -3.3533 0.5000</waypoint>
+        <waypoint>133.8000 3.2837 -3.5494 0.5000</waypoint>
+        <waypoint>134.1000 3.3823 -3.7008 0.5000</waypoint>
+        <waypoint>135.0500 3.7326 -4.1615 0.5000</waypoint>
+        <waypoint>135.5000 3.9257 -4.3558 0.5000</waypoint>
+        <waypoint>136.8500 4.5689 -4.8787 0.5000</waypoint>
+        <waypoint>137.8000 4.9685 -5.3005 0.5000</waypoint>
+        <waypoint>138.3500 5.2416 -5.4924 0.5000</waypoint>
+        <waypoint>139.4500 5.8448 -5.7919 0.5000</waypoint>
+        <waypoint>140.0500 6.1890 -5.9203 0.5000</waypoint>
+        <waypoint>140.4500 6.4117 -6.0235 0.5000</waypoint>
+        <waypoint>141.9000 7.1933 -6.4523 0.5000</waypoint>
+        <waypoint>143.8500 8.2751 -6.9709 0.5000</waypoint>
+        <waypoint>144.1500 8.4462 -7.0396 0.5000</waypoint>
+        <waypoint>144.5000 8.6529 -7.0928 0.5000</waypoint>
+        <waypoint>144.5500 8.6342 -7.0992 0.5000</waypoint>
+        <waypoint>145.3000 8.1849 -7.2041 0.5000</waypoint>
+        <waypoint>146.4000 7.5348 -7.3999 0.5000</waypoint>
+        <waypoint>146.8500 7.2644 -7.4269 0.5000</waypoint>
+        <waypoint>147.7000 6.7575 -7.3566 0.5000</waypoint>
+        <waypoint>148.1500 6.4884 -7.2982 0.5000</waypoint>
+        <waypoint>149.3500 5.8129 -7.0140 0.5000</waypoint>
+        <waypoint>150.0000 5.4310 -6.8959 0.5000</waypoint>
+        <waypoint>150.5000 5.1285 -6.8446 0.5000</waypoint>
+        <waypoint>150.9500 4.8554 -6.8476 0.5000</waypoint>
+        <waypoint>151.2000 4.7110 -6.8797 0.5000</waypoint>
+        <waypoint>151.6500 4.4598 -6.9741 0.5000</waypoint>
+        <waypoint>152.5000 4.0153 -7.2340 0.5000</waypoint>
+        <waypoint>153.7000 3.3651 -7.5819 0.5000</waypoint>
+        <waypoint>153.9500 3.2242 -7.6385 0.5000</waypoint>
+        <waypoint>154.1000 3.1372 -7.6554 0.5000</waypoint>
+        <waypoint>154.7500 2.7613 -7.5423 0.5000</waypoint>
+        <waypoint>155.0500 2.6017 -7.4582 0.5000</waypoint>
+        <waypoint>155.3000 2.4825 -7.3691 0.5000</waypoint>
+        <waypoint>155.7000 2.3208 -7.1960 0.5000</waypoint>
+        <waypoint>157.0000 1.8776 -6.5431 0.5000</waypoint>
+        <waypoint>157.2500 1.8028 -6.4099 0.5000</waypoint>
+        <waypoint>157.5500 1.7421 -6.2407 0.5000</waypoint>
+        <waypoint>158.4500 1.6237 -5.7074 0.5000</waypoint>
+        <waypoint>159.3500 1.4782 -5.1724 0.5000</waypoint>
+        <waypoint>160.1000 1.3913 -4.7183 0.5000</waypoint>
+        <waypoint>160.4000 1.3352 -4.5436 0.5000</waypoint>
+        <waypoint>160.7500 1.2399 -4.3552 0.5000</waypoint>
+        <waypoint>161.9500 0.8412 -3.7395 0.5000</waypoint>
+        <waypoint>162.3500 0.7401 -3.5186 0.5000</waypoint>
+        <waypoint>162.6500 0.6953 -3.3440 0.5000</waypoint>
+        <waypoint>163.0500 0.6599 -3.1046 0.5000</waypoint>
+        <waypoint>163.5000 0.6696 -2.8357 0.5000</waypoint>
+        <waypoint>164.0500 0.7334 -2.5105 0.5000</waypoint>
+        <waypoint>164.5000 0.8206 -2.2514 0.5000</waypoint>
+        <waypoint>165.9000 1.2113 -1.4880 0.5000</waypoint>
+        <waypoint>166.9500 1.5601 -0.9438 0.5000</waypoint>
+        <waypoint>168.1000 1.9990 -0.3875 0.5000</waypoint>
+        <waypoint>169.3500 2.3835 0.2778 0.5000</waypoint>
+        <waypoint>170.3500 2.7839 0.7416 0.5000</waypoint>
+        <waypoint>170.9500 2.9928 1.0439 0.5000</waypoint>
+        <waypoint>171.7000 3.2143 1.4475 0.5000</waypoint>
+        <waypoint>171.9500 3.2609 1.5909 0.5000</waypoint>
+        <waypoint>172.2000 3.2781 1.7362 0.5000</waypoint>
+        <waypoint>172.6500 3.2453 1.9946 0.5000</waypoint>
+        <waypoint>173.1500 3.1537 2.2766 0.5000</waypoint>
+        <waypoint>173.9500 2.9325 2.7060 0.5000</waypoint>
+        <waypoint>175.5500 2.5872 3.6250 0.5000</waypoint>
+        <waypoint>176.3500 2.3680 4.0663 0.5000</waypoint>
+        <waypoint>177.0500 2.2157 4.4671 0.5000</waypoint>
+        <waypoint>178.5000 1.8306 5.2723 0.5000</waypoint>
+        <waypoint>178.8500 1.7769 5.4779 0.5000</waypoint>
+        <waypoint>179.2500 1.7411 5.7188 0.5000</waypoint>
+        <waypoint>179.6000 1.7312 5.9322 0.5000</waypoint>
+        <waypoint>179.9500 1.7463 6.1449 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_2">
+      <pose>-6.7160 0.1521 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.074840</ixx><iyy>1.074840</iyy><izz>0.483012</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.3108093843050331</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.3108093843050331</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 -6.7160 0.1521 0.5000</waypoint>
+        <waypoint>0.2000 -6.6969 0.1462 0.5000</waypoint>
+        <waypoint>0.4000 -6.6488 0.1316 0.5000</waypoint>
+        <waypoint>0.8500 -6.4686 0.1009 0.5000</waypoint>
+        <waypoint>1.1500 -6.3200 0.0632 0.5000</waypoint>
+        <waypoint>1.6000 -6.0779 -0.0165 0.5000</waypoint>
+        <waypoint>1.8500 -5.9407 -0.0731 0.5000</waypoint>
+        <waypoint>2.1500 -5.7864 -0.1647 0.5000</waypoint>
+        <waypoint>2.7500 -5.5129 -0.4058 0.5000</waypoint>
+        <waypoint>3.8000 -5.0641 -0.8858 0.5000</waypoint>
+        <waypoint>4.6000 -4.6885 -1.2213 0.5000</waypoint>
+        <waypoint>5.8500 -4.0479 -1.6817 0.5000</waypoint>
+        <waypoint>6.3500 -3.8082 -1.8872 0.5000</waypoint>
+        <waypoint>6.7500 -3.6345 -2.0698 0.5000</waypoint>
+        <waypoint>7.1000 -3.5020 -2.2448 0.5000</waypoint>
+        <waypoint>7.3500 -3.4267 -2.3799 0.5000</waypoint>
+        <waypoint>7.6000 -3.3784 -2.5227 0.5000</waypoint>
+        <waypoint>8.0000 -3.3636 -2.7568 0.5000</waypoint>
+        <waypoint>8.5500 -3.4189 -3.0821 0.5000</waypoint>
+        <waypoint>8.9500 -3.5009 -3.3114 0.5000</waypoint>
+        <waypoint>9.3500 -3.6204 -3.5253 0.5000</waypoint>
+        <waypoint>9.6000 -3.7150 -3.6449 0.5000</waypoint>
+        <waypoint>9.8500 -3.8264 -3.7466 0.5000</waypoint>
+        <waypoint>11.3000 -4.5667 -4.2596 0.5000</waypoint>
+        <waypoint>11.8500 -4.8332 -4.4802 0.5000</waypoint>
+        <waypoint>12.3500 -5.0135 -4.7289 0.5000</waypoint>
+        <waypoint>13.0000 -5.1821 -5.0949 0.5000</waypoint>
+        <waypoint>13.5500 -5.2849 -5.4237 0.5000</waypoint>
+        <waypoint>14.0000 -5.3205 -5.7014 0.5000</waypoint>
+        <waypoint>14.3500 -5.3163 -5.9184 0.5000</waypoint>
+        <waypoint>15.8500 -5.2236 -6.8555 0.5000</waypoint>
+        <waypoint>16.8500 -5.2648 -7.4842 0.5000</waypoint>
+        <waypoint>17.1500 -5.2952 -7.6704 0.5000</waypoint>
+        <waypoint>17.2000 -5.3020 -7.6831 0.5000</waypoint>
+        <waypoint>18.2500 -5.4942 -7.0509 0.5000</waypoint>
+        <waypoint>18.7500 -5.5317 -6.7448 0.5000</waypoint>
+        <waypoint>19.1000 -5.5192 -6.5291 0.5000</waypoint>
+        <waypoint>19.5000 -5.4738 -6.2855 0.5000</waypoint>
+        <waypoint>20.4000 -5.2965 -5.7518 0.5000</waypoint>
+        <waypoint>20.7000 -5.2645 -5.5703 0.5000</waypoint>
+        <waypoint>21.2000 -5.2676 -5.2638 0.5000</waypoint>
+        <waypoint>22.0500 -5.3146 -4.7337 0.5000</waypoint>
+        <waypoint>22.5000 -5.3240 -4.4500 0.5000</waypoint>
+        <waypoint>23.5500 -5.3026 -3.7865 0.5000</waypoint>
+        <waypoint>23.9500 -5.2728 -3.5367 0.5000</waypoint>
+        <waypoint>24.3000 -5.2168 -3.3254 0.5000</waypoint>
+        <waypoint>24.6500 -5.1332 -3.1247 0.5000</waypoint>
+        <waypoint>25.4500 -4.8993 -2.6834 0.5000</waypoint>
+        <waypoint>25.9500 -4.7325 -2.4178 0.5000</waypoint>
+        <waypoint>26.9500 -4.4250 -1.8667 0.5000</waypoint>
+        <waypoint>27.7500 -4.2024 -1.4146 0.5000</waypoint>
+        <waypoint>29.5000 -3.6566 -0.4498 0.5000</waypoint>
+        <waypoint>30.0500 -3.4999 -0.1386 0.5000</waypoint>
+        <waypoint>30.4000 -3.4356 0.0698 0.5000</waypoint>
+        <waypoint>31.0500 -3.3611 0.4673 0.5000</waypoint>
+        <waypoint>31.8500 -3.2146 0.9471 0.5000</waypoint>
+        <waypoint>32.5500 -3.1060 1.3753 0.5000</waypoint>
+        <waypoint>33.7000 -2.8337 2.0470 0.5000</waypoint>
+        <waypoint>34.8500 -2.6339 2.7456 0.5000</waypoint>
+        <waypoint>36.1000 -2.3513 3.4831 0.5000</waypoint>
+        <waypoint>36.5000 -2.3091 3.7268 0.5000</waypoint>
+        <waypoint>36.9000 -2.3133 3.9725 0.5000</waypoint>
+        <waypoint>37.6000 -2.3909 4.3997 0.5000</waypoint>
+        <waypoint>38.5000 -2.5370 4.9459 0.5000</waypoint>
+        <waypoint>38.8000 -2.5588 5.1313 0.5000</waypoint>
+        <waypoint>39.1500 -2.5597 5.3492 0.5000</waypoint>
+        <waypoint>39.9500 -2.5025 5.8472 0.5000</waypoint>
+        <waypoint>40.7000 -2.3621 6.2938 0.5000</waypoint>
+        <waypoint>41.7000 -2.2229 6.9059 0.5000</waypoint>
+        <waypoint>42.9500 -2.1566 7.6892 0.5000</waypoint>
+        <waypoint>43.4500 -2.0885 7.3830 0.5000</waypoint>
+        <waypoint>44.3500 -1.8785 6.8616 0.5000</waypoint>
+        <waypoint>45.4000 -1.7628 6.2176 0.5000</waypoint>
+        <waypoint>45.9500 -1.6546 5.8913 0.5000</waypoint>
+        <waypoint>46.2000 -1.5836 5.7532 0.5000</waypoint>
+        <waypoint>46.4500 -1.4944 5.6287 0.5000</waypoint>
+        <waypoint>47.4500 -1.0671 5.1760 0.5000</waypoint>
+        <waypoint>48.1500 -0.7945 4.8299 0.5000</waypoint>
+        <waypoint>48.8500 -0.5503 4.4612 0.5000</waypoint>
+        <waypoint>49.3500 -0.3957 4.1853 0.5000</waypoint>
+        <waypoint>49.8500 -0.2825 3.8926 0.5000</waypoint>
+        <waypoint>50.8000 -0.1542 3.3114 0.5000</waypoint>
+        <waypoint>52.4000 0.1326 2.3435 0.5000</waypoint>
+        <waypoint>53.5500 0.4146 1.6739 0.5000</waypoint>
+        <waypoint>54.2500 0.6146 1.2812 0.5000</waypoint>
+        <waypoint>54.7500 0.7233 0.9862 0.5000</waypoint>
+        <waypoint>55.6500 0.8551 0.4343 0.5000</waypoint>
+        <waypoint>56.6000 0.9458 -0.1583 0.5000</waypoint>
+        <waypoint>57.6000 1.0045 -0.7869 0.5000</waypoint>
+        <waypoint>59.1500 1.0129 -1.7663 0.5000</waypoint>
+        <waypoint>60.7500 1.1687 -2.7647 0.5000</waypoint>
+        <waypoint>61.3000 1.2460 -3.1046 0.5000</waypoint>
+        <waypoint>61.6500 1.3184 -3.3125 0.5000</waypoint>
+        <waypoint>61.9500 1.4021 -3.4800 0.5000</waypoint>
+        <waypoint>63.1500 1.7851 -4.1309 0.5000</waypoint>
+        <waypoint>63.6500 1.9038 -4.4216 0.5000</waypoint>
+        <waypoint>64.4500 2.0615 -4.9005 0.5000</waypoint>
+        <waypoint>64.8500 2.1768 -5.1204 0.5000</waypoint>
+        <waypoint>65.4000 2.3755 -5.3999 0.5000</waypoint>
+        <waypoint>65.9000 2.5825 -5.6355 0.5000</waypoint>
+        <waypoint>66.3000 2.7715 -5.7992 0.5000</waypoint>
+        <waypoint>67.2500 3.2636 -6.1327 0.5000</waypoint>
+        <waypoint>67.5500 3.3940 -6.2633 0.5000</waypoint>
+        <waypoint>68.0500 3.5910 -6.5034 0.5000</waypoint>
+        <waypoint>68.3500 3.6996 -6.6566 0.5000</waypoint>
+        <waypoint>68.6500 3.7874 -6.8210 0.5000</waypoint>
+        <waypoint>69.8500 4.0632 -7.5226 0.5000</waypoint>
+        <waypoint>70.1000 4.1271 -7.6668 0.5000</waypoint>
+        <waypoint>70.1500 4.1400 -7.6834 0.5000</waypoint>
+        <waypoint>71.0500 4.4013 -7.1790 0.5000</waypoint>
+        <waypoint>72.9000 4.8610 -6.1058 0.5000</waypoint>
+        <waypoint>73.3500 4.9412 -5.8331 0.5000</waypoint>
+        <waypoint>73.8000 4.9912 -5.5543 0.5000</waypoint>
+        <waypoint>75.0500 5.0160 -4.7677 0.5000</waypoint>
+        <waypoint>75.4500 5.0485 -4.5185 0.5000</waypoint>
+        <waypoint>75.6500 5.0865 -4.4022 0.5000</waypoint>
+        <waypoint>75.9000 5.1552 -4.2684 0.5000</waypoint>
+        <waypoint>76.1000 5.2269 -4.1742 0.5000</waypoint>
+        <waypoint>76.3500 5.3333 -4.0718 0.5000</waypoint>
+        <waypoint>76.9000 5.6111 -3.8945 0.5000</waypoint>
+        <waypoint>77.7500 6.0867 -3.6688 0.5000</waypoint>
+        <waypoint>78.5000 6.5381 -3.5531 0.5000</waypoint>
+        <waypoint>79.1000 6.9109 -3.5093 0.5000</waypoint>
+        <waypoint>79.5500 7.1933 -3.5059 0.5000</waypoint>
+        <waypoint>80.1000 7.5350 -3.5488 0.5000</waypoint>
+        <waypoint>81.6000 8.4554 -3.7689 0.5000</waypoint>
+        <waypoint>81.9500 8.6687 -3.8291 0.5000</waypoint>
+        <waypoint>82.0000 8.6831 -3.8379 0.5000</waypoint>
+        <waypoint>82.8500 8.1662 -3.9918 0.5000</waypoint>
+        <waypoint>83.2000 7.9603 -4.0716 0.5000</waypoint>
+        <waypoint>85.7000 6.5502 -4.7835 0.5000</waypoint>
+        <waypoint>86.2000 6.2891 -4.9579 0.5000</waypoint>
+        <waypoint>87.0000 5.9345 -5.3084 0.5000</waypoint>
+        <waypoint>87.5000 5.6951 -5.5113 0.5000</waypoint>
+        <waypoint>87.7500 5.5619 -5.5901 0.5000</waypoint>
+        <waypoint>88.8500 4.9430 -5.8895 0.5000</waypoint>
+        <waypoint>89.2500 4.7066 -5.9698 0.5000</waypoint>
+        <waypoint>89.6000 4.4940 -5.9956 0.5000</waypoint>
+        <waypoint>90.1000 4.1857 -5.9862 0.5000</waypoint>
+        <waypoint>90.5500 3.9125 -5.9323 0.5000</waypoint>
+        <waypoint>91.4000 3.4164 -5.7436 0.5000</waypoint>
+        <waypoint>92.1000 3.0256 -5.5388 0.5000</waypoint>
+        <waypoint>92.8000 2.6603 -5.2918 0.5000</waypoint>
+        <waypoint>93.8500 2.1262 -4.8954 0.5000</waypoint>
+        <waypoint>94.2500 1.9323 -4.7330 0.5000</waypoint>
+        <waypoint>94.7500 1.7335 -4.4933 0.5000</waypoint>
+        <waypoint>95.5500 1.4622 -4.0709 0.5000</waypoint>
+        <waypoint>95.8500 1.3490 -3.9210 0.5000</waypoint>
+        <waypoint>97.2500 0.7405 -3.2866 0.5000</waypoint>
+        <waypoint>97.7000 0.5548 -3.0719 0.5000</waypoint>
+        <waypoint>99.0000 0.1437 -2.3678 0.5000</waypoint>
+        <waypoint>99.3000 0.0366 -2.2148 0.5000</waypoint>
+        <waypoint>99.8000 -0.1680 -1.9792 0.5000</waypoint>
+        <waypoint>100.2500 -0.3846 -1.8027 0.5000</waypoint>
+        <waypoint>100.6500 -0.6017 -1.6859 0.5000</waypoint>
+        <waypoint>101.3500 -1.0131 -1.5548 0.5000</waypoint>
+        <waypoint>101.9000 -1.3206 -1.4064 0.5000</waypoint>
+        <waypoint>104.3500 -2.5728 -0.5030 0.5000</waypoint>
+        <waypoint>106.0000 -3.4691 0.0328 0.5000</waypoint>
+        <waypoint>106.5000 -3.7592 0.1558 0.5000</waypoint>
+        <waypoint>107.6000 -4.4172 0.3710 0.5000</waypoint>
+        <waypoint>109.0000 -5.2270 0.7275 0.5000</waypoint>
+        <waypoint>109.7000 -5.6178 0.9357 0.5000</waypoint>
+        <waypoint>110.8500 -6.2396 1.3163 0.5000</waypoint>
+        <waypoint>111.2000 -6.4383 1.4100 0.5000</waypoint>
+        <waypoint>111.5500 -6.6467 1.4724 0.5000</waypoint>
+        <waypoint>111.9000 -6.8610 1.5041 0.5000</waypoint>
+        <waypoint>112.1500 -7.0142 1.5031 0.5000</waypoint>
+        <waypoint>112.4500 -7.1929 1.4707 0.5000</waypoint>
+        <waypoint>112.8500 -7.4256 1.3970 0.5000</waypoint>
+        <waypoint>113.2500 -7.6344 1.2750 0.5000</waypoint>
+        <waypoint>113.6000 -7.8023 1.1429 0.5000</waypoint>
+        <waypoint>113.9500 -7.9355 0.9801 0.5000</waypoint>
+        <waypoint>114.8000 -8.1612 0.5141 0.5000</waypoint>
+        <waypoint>115.3000 -8.2813 0.2253 0.5000</waypoint>
+        <waypoint>116.0500 -8.4316 -0.2233 0.5000</waypoint>
+        <waypoint>116.6000 -8.5167 -0.5606 0.5000</waypoint>
+        <waypoint>117.7000 -8.6294 -1.2481 0.5000</waypoint>
+        <waypoint>118.6500 -8.6572 -1.8481 0.5000</waypoint>
+        <waypoint>119.1000 -8.6892 -2.1304 0.5000</waypoint>
+        <waypoint>119.9500 -8.6302 -2.6652 0.5000</waypoint>
+        <waypoint>120.3000 -8.5925 -2.8833 0.5000</waypoint>
+        <waypoint>120.7000 -8.5167 -3.1219 0.5000</waypoint>
+        <waypoint>121.0500 -8.4257 -3.3207 0.5000</waypoint>
+        <waypoint>122.2000 -8.0722 -3.9514 0.5000</waypoint>
+        <waypoint>122.5000 -8.0160 -4.1266 0.5000</waypoint>
+        <waypoint>122.7500 -8.0041 -4.2741 0.5000</waypoint>
+        <waypoint>123.2000 -8.0569 -4.5302 0.5000</waypoint>
+        <waypoint>123.9000 -8.2198 -4.9226 0.5000</waypoint>
+        <waypoint>124.3500 -8.3642 -5.1605 0.5000</waypoint>
+        <waypoint>125.2000 -8.6830 -5.5856 0.5000</waypoint>
+        <waypoint>125.2500 -8.6783 -5.6113 0.5000</waypoint>
+        <waypoint>125.9500 -8.4038 -5.9571 0.5000</waypoint>
+        <waypoint>126.5000 -8.1511 -6.1918 0.5000</waypoint>
+        <waypoint>126.9500 -7.9244 -6.3598 0.5000</waypoint>
+        <waypoint>127.5000 -7.6171 -6.5111 0.5000</waypoint>
+        <waypoint>127.9000 -7.3782 -6.5763 0.5000</waypoint>
+        <waypoint>129.4000 -6.4550 -6.7691 0.5000</waypoint>
+        <waypoint>131.0000 -5.4521 -6.8200 0.5000</waypoint>
+        <waypoint>131.4000 -5.2107 -6.8799 0.5000</waypoint>
+        <waypoint>131.7500 -5.0080 -6.9578 0.5000</waypoint>
+        <waypoint>132.1000 -4.8255 -7.0703 0.5000</waypoint>
+        <waypoint>132.5000 -4.6544 -7.2403 0.5000</waypoint>
+        <waypoint>132.9000 -4.5289 -7.4451 0.5000</waypoint>
+        <waypoint>133.3000 -4.4435 -7.6721 0.5000</waypoint>
+        <waypoint>133.3500 -4.4342 -7.6775 0.5000</waypoint>
+        <waypoint>134.0500 -4.3044 -7.2613 0.5000</waypoint>
+        <waypoint>134.4500 -4.2564 -7.0155 0.5000</waypoint>
+        <waypoint>135.0000 -4.2298 -6.6717 0.5000</waypoint>
+        <waypoint>135.4500 -4.2708 -6.3982 0.5000</waypoint>
+        <waypoint>136.1500 -4.4146 -5.9911 0.5000</waypoint>
+        <waypoint>136.8000 -4.5902 -5.6237 0.5000</waypoint>
+        <waypoint>137.5000 -4.8231 -5.2497 0.5000</waypoint>
+        <waypoint>138.5500 -5.1521 -4.6726 0.5000</waypoint>
+        <waypoint>138.9000 -5.2889 -4.5022 0.5000</waypoint>
+        <waypoint>139.2000 -5.4259 -4.3770 0.5000</waypoint>
+        <waypoint>139.6000 -5.6336 -4.2481 0.5000</waypoint>
+        <waypoint>140.2000 -5.9784 -4.1140 0.5000</waypoint>
+        <waypoint>140.7500 -6.3101 -4.0244 0.5000</waypoint>
+        <waypoint>141.3000 -6.6519 -3.9839 0.5000</waypoint>
+        <waypoint>142.4000 -7.3390 -4.0368 0.5000</waypoint>
+        <waypoint>143.3500 -7.9319 -4.1343 0.5000</waypoint>
+        <waypoint>144.2500 -8.4830 -4.2766 0.5000</waypoint>
+        <waypoint>144.5500 -8.6679 -4.2952 0.5000</waypoint>
+        <waypoint>144.6000 -8.6830 -4.2957 0.5000</waypoint>
+        <waypoint>145.2000 -8.3099 -4.2844 0.5000</waypoint>
+        <waypoint>145.6000 -8.0680 -4.2335 0.5000</waypoint>
+        <waypoint>145.9500 -7.8693 -4.1514 0.5000</waypoint>
+        <waypoint>146.9000 -7.3459 -3.8758 0.5000</waypoint>
+        <waypoint>147.4000 -7.0508 -3.7687 0.5000</waypoint>
+        <waypoint>147.8500 -6.7776 -3.6928 0.5000</waypoint>
+        <waypoint>148.5000 -6.3734 -3.6330 0.5000</waypoint>
+        <waypoint>149.3500 -5.8427 -3.6308 0.5000</waypoint>
+        <waypoint>149.9000 -5.5020 -3.5840 0.5000</waypoint>
+        <waypoint>150.3000 -5.2621 -3.5160 0.5000</waypoint>
+        <waypoint>151.5000 -4.5825 -3.1932 0.5000</waypoint>
+        <waypoint>151.8500 -4.3986 -3.0765 0.5000</waypoint>
+        <waypoint>152.2000 -4.2269 -2.9420 0.5000</waypoint>
+        <waypoint>152.5000 -4.0925 -2.8123 0.5000</waypoint>
+        <waypoint>153.1500 -3.8523 -2.4874 0.5000</waypoint>
+        <waypoint>153.4500 -3.7616 -2.3237 0.5000</waypoint>
+        <waypoint>153.7000 -3.7134 -2.1798 0.5000</waypoint>
+        <waypoint>154.4500 -3.6658 -1.7261 0.5000</waypoint>
+        <waypoint>155.1500 -3.6979 -1.2922 0.5000</waypoint>
+        <waypoint>156.2000 -3.8822 -0.6686 0.5000</waypoint>
+        <waypoint>157.5500 -3.9855 0.1724 0.5000</waypoint>
+        <waypoint>157.9500 -3.9560 0.4147 0.5000</waypoint>
+        <waypoint>159.0000 -3.7872 1.0456 0.5000</waypoint>
+        <waypoint>159.8500 -3.7131 1.5734 0.5000</waypoint>
+        <waypoint>160.3500 -3.6865 1.8876 0.5000</waypoint>
+        <waypoint>160.6500 -3.6902 2.0759 0.5000</waypoint>
+        <waypoint>161.1500 -3.7272 2.3876 0.5000</waypoint>
+        <waypoint>162.2500 -3.8723 3.0668 0.5000</waypoint>
+        <waypoint>162.6000 -3.8951 3.2847 0.5000</waypoint>
+        <waypoint>162.9500 -3.8862 3.5020 0.5000</waypoint>
+        <waypoint>164.0500 -3.7793 4.1825 0.5000</waypoint>
+        <waypoint>164.4000 -3.7582 4.4019 0.5000</waypoint>
+        <waypoint>164.6500 -3.7671 4.5561 0.5000</waypoint>
+        <waypoint>165.3500 -3.8350 4.9841 0.5000</waypoint>
+        <waypoint>165.5500 -3.8360 5.1075 0.5000</waypoint>
+        <waypoint>165.8000 -3.8146 5.2579 0.5000</waypoint>
+        <waypoint>166.1500 -3.7347 5.4449 0.5000</waypoint>
+        <waypoint>166.6000 -3.5564 5.6272 0.5000</waypoint>
+        <waypoint>166.9500 -3.3844 5.7391 0.5000</waypoint>
+        <waypoint>167.7000 -2.9651 5.9113 0.5000</waypoint>
+        <waypoint>168.1500 -2.7231 6.0481 0.5000</waypoint>
+        <waypoint>168.6500 -2.4809 6.2417 0.5000</waypoint>
+        <waypoint>169.6500 -2.0188 6.6686 0.5000</waypoint>
+        <waypoint>170.2000 -1.8189 6.9465 0.5000</waypoint>
+        <waypoint>170.7000 -1.6826 7.2262 0.5000</waypoint>
+        <waypoint>171.0500 -1.6263 7.4333 0.5000</waypoint>
+        <waypoint>171.4500 -1.6100 7.6764 0.5000</waypoint>
+        <waypoint>171.5000 -1.6088 7.6769 0.5000</waypoint>
+        <waypoint>172.3500 -1.6176 7.1465 0.5000</waypoint>
+        <waypoint>173.9000 -1.7468 6.1770 0.5000</waypoint>
+        <waypoint>174.9000 -1.6747 5.5582 0.5000</waypoint>
+        <waypoint>175.5500 -1.5958 5.1562 0.5000</waypoint>
+        <waypoint>175.8500 -1.5423 4.9757 0.5000</waypoint>
+        <waypoint>176.1000 -1.4753 4.8371 0.5000</waypoint>
+        <waypoint>177.1500 -1.0784 4.3264 0.5000</waypoint>
+        <waypoint>178.0500 -0.8189 3.8289 0.5000</waypoint>
+        <waypoint>178.5000 -0.7150 3.5659 0.5000</waypoint>
+        <waypoint>179.3500 -0.5889 3.0473 0.5000</waypoint>
+        <waypoint>179.9500 -0.4621 2.6920 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_3">
+      <pose>2.9049 -2.7769 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.077758</ixx><iyy>1.077758</iyy><izz>0.488850</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.31268197905479883</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.31268197905479883</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 2.9049 -2.7769 0.5000</waypoint>
+        <waypoint>0.2500 2.9251 -2.7870 0.5000</waypoint>
+        <waypoint>0.5500 2.9897 -2.8110 0.5000</waypoint>
+        <waypoint>0.9500 3.1164 -2.8561 0.5000</waypoint>
+        <waypoint>1.4000 3.2828 -2.9304 0.5000</waypoint>
+        <waypoint>2.7500 3.7967 -3.2624 0.5000</waypoint>
+        <waypoint>3.8500 4.2106 -3.5722 0.5000</waypoint>
+        <waypoint>5.0000 4.6624 -3.8606 0.5000</waypoint>
+        <waypoint>5.4500 4.8519 -3.9466 0.5000</waypoint>
+        <waypoint>5.9500 5.0766 -3.9889 0.5000</waypoint>
+        <waypoint>6.8000 5.4714 -3.9970 0.5000</waypoint>
+        <waypoint>7.5000 5.7973 -4.0351 0.5000</waypoint>
+        <waypoint>8.2500 6.1471 -4.0916 0.5000</waypoint>
+        <waypoint>9.3500 6.6547 -4.2010 0.5000</waypoint>
+        <waypoint>10.1500 7.0287 -4.2556 0.5000</waypoint>
+        <waypoint>10.6500 7.2576 -4.2339 0.5000</waypoint>
+        <waypoint>11.4000 7.5917 -4.1446 0.5000</waypoint>
+        <waypoint>11.7000 7.7281 -4.1349 0.5000</waypoint>
+        <waypoint>11.9500 7.8407 -4.1452 0.5000</waypoint>
+        <waypoint>12.2500 7.9729 -4.1764 0.5000</waypoint>
+        <waypoint>12.5500 8.0973 -4.2289 0.5000</waypoint>
+        <waypoint>14.0500 8.6873 -4.5960 0.5000</waypoint>
+        <waypoint>14.2000 8.6265 -4.6320 0.5000</waypoint>
+        <waypoint>14.2500 8.6257 -4.6465 0.5000</waypoint>
+        <waypoint>14.4000 8.6830 -4.6986 0.5000</waypoint>
+        <waypoint>14.9500 8.4718 -4.8923 0.5000</waypoint>
+        <waypoint>15.5000 8.2869 -5.0889 0.5000</waypoint>
+        <waypoint>15.8500 8.1897 -5.2246 0.5000</waypoint>
+        <waypoint>16.4000 8.0638 -5.4515 0.5000</waypoint>
+        <waypoint>16.8500 7.9791 -5.6455 0.5000</waypoint>
+        <waypoint>17.6000 7.8631 -5.9800 0.5000</waypoint>
+        <waypoint>18.4500 7.7644 -6.3685 0.5000</waypoint>
+        <waypoint>19.3500 7.6372 -6.7739 0.5000</waypoint>
+        <waypoint>19.8000 7.5389 -6.9592 0.5000</waypoint>
+        <waypoint>20.7500 7.2805 -7.3193 0.5000</waypoint>
+        <waypoint>21.6000 7.1150 -7.6785 0.5000</waypoint>
+        <waypoint>21.6500 7.1037 -7.6792 0.5000</waypoint>
+        <waypoint>22.2000 6.9713 -7.4584 0.5000</waypoint>
+        <waypoint>22.7500 6.8124 -7.2554 0.5000</waypoint>
+        <waypoint>25.1500 5.9897 -6.4812 0.5000</waypoint>
+        <waypoint>25.6500 5.7974 -6.3473 0.5000</waypoint>
+        <waypoint>26.0500 5.6316 -6.2615 0.5000</waypoint>
+        <waypoint>26.7000 5.3486 -6.1492 0.5000</waypoint>
+        <waypoint>27.0500 5.1913 -6.1262 0.5000</waypoint>
+        <waypoint>27.4500 5.0161 -6.1509 0.5000</waypoint>
+        <waypoint>28.4500 4.5816 -6.2945 0.5000</waypoint>
+        <waypoint>29.2500 4.2171 -6.3808 0.5000</waypoint>
+        <waypoint>29.5500 4.0885 -6.4325 0.5000</waypoint>
+        <waypoint>29.8000 3.9933 -6.4931 0.5000</waypoint>
+        <waypoint>30.1500 3.8883 -6.6050 0.5000</waypoint>
+        <waypoint>31.4500 3.5478 -7.0898 0.5000</waypoint>
+        <waypoint>31.8500 3.4590 -7.2533 0.5000</waypoint>
+        <waypoint>32.8500 3.2875 -7.6850 0.5000</waypoint>
+        <waypoint>33.8000 3.0897 -7.2904 0.5000</waypoint>
+        <waypoint>34.4500 2.9230 -7.0342 0.5000</waypoint>
+        <waypoint>34.9500 2.7702 -6.8557 0.5000</waypoint>
+        <waypoint>36.2000 2.3510 -6.4436 0.5000</waypoint>
+        <waypoint>38.0000 1.8498 -5.7579 0.5000</waypoint>
+        <waypoint>38.4000 1.7287 -5.6134 0.5000</waypoint>
+        <waypoint>38.9000 1.5541 -5.4574 0.5000</waypoint>
+        <waypoint>39.9500 1.1520 -5.1705 0.5000</waypoint>
+        <waypoint>40.5500 0.8992 -5.0474 0.5000</waypoint>
+        <waypoint>41.0000 0.6976 -5.0009 0.5000</waypoint>
+        <waypoint>41.3500 0.5458 -5.0158 0.5000</waypoint>
+        <waypoint>41.7500 0.4041 -5.0972 0.5000</waypoint>
+        <waypoint>42.4500 0.1660 -5.2926 0.5000</waypoint>
+        <waypoint>43.6500 -0.2098 -5.6983 0.5000</waypoint>
+        <waypoint>44.9000 -0.5292 -6.1863 0.5000</waypoint>
+        <waypoint>47.1500 -0.9761 -7.1483 0.5000</waypoint>
+        <waypoint>48.2000 -1.2399 -7.5672 0.5000</waypoint>
+        <waypoint>48.5000 -1.3028 -7.6830 0.5000</waypoint>
+        <waypoint>48.9000 -1.3873 -7.5165 0.5000</waypoint>
+        <waypoint>49.2000 -1.4677 -7.4033 0.5000</waypoint>
+        <waypoint>50.3500 -1.8425 -7.0200 0.5000</waypoint>
+        <waypoint>51.8500 -2.2984 -6.4797 0.5000</waypoint>
+        <waypoint>52.5500 -2.4953 -6.2162 0.5000</waypoint>
+        <waypoint>52.8500 -2.5933 -6.1183 0.5000</waypoint>
+        <waypoint>53.2000 -2.7262 -6.0328 0.5000</waypoint>
+        <waypoint>53.5500 -2.8715 -5.9673 0.5000</waypoint>
+        <waypoint>55.3000 -3.6417 -5.6883 0.5000</waypoint>
+        <waypoint>55.7000 -3.8231 -5.6390 0.5000</waypoint>
+        <waypoint>56.0500 -3.9850 -5.6119 0.5000</waypoint>
+        <waypoint>56.3000 -4.1000 -5.6102 0.5000</waypoint>
+        <waypoint>56.6500 -4.2569 -5.6360 0.5000</waypoint>
+        <waypoint>57.0500 -4.4304 -5.6932 0.5000</waypoint>
+        <waypoint>58.3500 -4.9457 -5.9944 0.5000</waypoint>
+        <waypoint>59.1500 -5.2604 -6.1996 0.5000</waypoint>
+        <waypoint>60.0500 -5.6330 -6.4029 0.5000</waypoint>
+        <waypoint>61.1000 -6.0575 -6.6597 0.5000</waypoint>
+        <waypoint>61.6000 -6.2721 -6.7419 0.5000</waypoint>
+        <waypoint>61.8500 -6.3841 -6.7564 0.5000</waypoint>
+        <waypoint>62.1000 -6.4954 -6.7509 0.5000</waypoint>
+        <waypoint>62.7500 -6.7809 -6.6800 0.5000</waypoint>
+        <waypoint>63.5000 -7.1078 -6.5578 0.5000</waypoint>
+        <waypoint>63.8000 -7.2272 -6.4869 0.5000</waypoint>
+        <waypoint>64.1000 -7.3342 -6.4000 0.5000</waypoint>
+        <waypoint>64.5000 -7.4610 -6.2661 0.5000</waypoint>
+        <waypoint>64.8000 -7.5423 -6.1542 0.5000</waypoint>
+        <waypoint>65.1000 -7.6017 -6.0316 0.5000</waypoint>
+        <waypoint>65.4500 -7.6458 -5.8793 0.5000</waypoint>
+        <waypoint>66.3000 -7.6878 -5.4895 0.5000</waypoint>
+        <waypoint>67.2000 -7.6652 -5.0693 0.5000</waypoint>
+        <waypoint>68.1000 -7.6720 -4.6463 0.5000</waypoint>
+        <waypoint>68.9500 -7.7463 -4.2544 0.5000</waypoint>
+        <waypoint>69.7000 -7.8657 -3.9253 0.5000</waypoint>
+        <waypoint>70.0500 -7.8967 -3.7677 0.5000</waypoint>
+        <waypoint>70.7500 -7.9006 -3.4458 0.5000</waypoint>
+        <waypoint>71.2000 -7.8752 -3.2384 0.5000</waypoint>
+        <waypoint>71.6500 -7.8128 -3.0400 0.5000</waypoint>
+        <waypoint>72.3500 -7.6740 -2.7451 0.5000</waypoint>
+        <waypoint>73.5500 -7.3674 -2.2716 0.5000</waypoint>
+        <waypoint>74.5000 -7.0668 -1.9487 0.5000</waypoint>
+        <waypoint>75.1500 -6.9002 -1.6965 0.5000</waypoint>
+        <waypoint>75.8500 -6.7468 -1.4075 0.5000</waypoint>
+        <waypoint>76.2500 -6.6356 -1.2586 0.5000</waypoint>
+        <waypoint>76.6500 -6.5025 -1.1305 0.5000</waypoint>
+        <waypoint>77.4500 -6.1974 -0.9209 0.5000</waypoint>
+        <waypoint>78.3500 -5.8827 -0.6406 0.5000</waypoint>
+        <waypoint>79.0500 -5.6237 -0.4366 0.5000</waypoint>
+        <waypoint>79.4000 -5.5041 -0.3240 0.5000</waypoint>
+        <waypoint>79.6500 -5.4340 -0.2328 0.5000</waypoint>
+        <waypoint>79.9500 -5.3819 -0.1119 0.5000</waypoint>
+        <waypoint>80.3500 -5.3586 0.0603 0.5000</waypoint>
+        <waypoint>81.5500 -5.3859 0.6093 0.5000</waypoint>
+        <waypoint>82.2000 -5.3631 0.9115 0.5000</waypoint>
+        <waypoint>82.9000 -5.2748 1.2246 0.5000</waypoint>
+        <waypoint>83.1500 -5.2177 1.3217 0.5000</waypoint>
+        <waypoint>83.4500 -5.1300 1.4231 0.5000</waypoint>
+        <waypoint>84.1500 -4.8885 1.6341 0.5000</waypoint>
+        <waypoint>85.4000 -4.4299 2.0017 0.5000</waypoint>
+        <waypoint>86.7000 -4.0038 2.4396 0.5000</waypoint>
+        <waypoint>87.1500 -3.8367 2.5696 0.5000</waypoint>
+        <waypoint>87.6000 -3.6567 2.6800 0.5000</waypoint>
+        <waypoint>88.9000 -3.1048 2.9432 0.5000</waypoint>
+        <waypoint>89.6500 -2.7764 3.0710 0.5000</waypoint>
+        <waypoint>90.3000 -2.4822 3.1541 0.5000</waypoint>
+        <waypoint>90.5500 -2.3677 3.1666 0.5000</waypoint>
+        <waypoint>90.8000 -2.2550 3.1592 0.5000</waypoint>
+        <waypoint>91.6000 -1.9050 3.0592 0.5000</waypoint>
+        <waypoint>91.8500 -1.8045 3.0065 0.5000</waypoint>
+        <waypoint>92.1000 -1.7181 2.9368 0.5000</waypoint>
+        <waypoint>92.7000 -1.5674 2.7194 0.5000</waypoint>
+        <waypoint>93.2000 -1.4806 2.5103 0.5000</waypoint>
+        <waypoint>94.5500 -1.3256 1.9015 0.5000</waypoint>
+        <waypoint>94.8000 -1.2757 1.7988 0.5000</waypoint>
+        <waypoint>95.1000 -1.1940 1.6925 0.5000</waypoint>
+        <waypoint>95.4000 -1.0964 1.5998 0.5000</waypoint>
+        <waypoint>95.8000 -0.9464 1.4986 0.5000</waypoint>
+        <waypoint>97.0000 -0.4458 1.2501 0.5000</waypoint>
+        <waypoint>97.4500 -0.2646 1.1416 0.5000</waypoint>
+        <waypoint>98.0000 -0.0616 0.9827 0.5000</waypoint>
+        <waypoint>98.5500 0.1120 0.7936 0.5000</waypoint>
+        <waypoint>99.2500 0.2885 0.5185 0.5000</waypoint>
+        <waypoint>99.7500 0.3890 0.3071 0.5000</waypoint>
+        <waypoint>100.3500 0.4593 0.0368 0.5000</waypoint>
+        <waypoint>101.0000 0.4993 -0.2653 0.5000</waypoint>
+        <waypoint>101.3000 0.4881 -0.4013 0.5000</waypoint>
+        <waypoint>101.6500 0.4325 -0.5434 0.5000</waypoint>
+        <waypoint>102.1500 0.3104 -0.7302 0.5000</waypoint>
+        <waypoint>103.1500 0.0151 -1.0872 0.5000</waypoint>
+        <waypoint>103.7000 -0.1259 -1.3032 0.5000</waypoint>
+        <waypoint>104.0500 -0.2019 -1.4484 0.5000</waypoint>
+        <waypoint>104.9000 -0.3415 -1.8206 0.5000</waypoint>
+        <waypoint>105.1500 -0.3937 -1.9233 0.5000</waypoint>
+        <waypoint>105.6000 -0.5219 -2.0821 0.5000</waypoint>
+        <waypoint>106.3000 -0.7541 -2.3092 0.5000</waypoint>
+        <waypoint>106.9500 -1.0007 -2.4857 0.5000</waypoint>
+        <waypoint>107.6000 -1.2775 -2.6078 0.5000</waypoint>
+        <waypoint>108.1000 -1.5035 -2.6634 0.5000</waypoint>
+        <waypoint>109.4500 -2.1313 -2.7578 0.5000</waypoint>
+        <waypoint>110.5000 -2.6054 -2.8992 0.5000</waypoint>
+        <waypoint>111.0500 -2.8405 -3.0058 0.5000</waypoint>
+        <waypoint>111.5000 -3.0070 -3.1287 0.5000</waypoint>
+        <waypoint>112.1500 -3.2016 -3.3544 0.5000</waypoint>
+        <waypoint>112.6000 -3.3103 -3.5307 0.5000</waypoint>
+        <waypoint>113.0000 -3.3709 -3.7025 0.5000</waypoint>
+        <waypoint>113.6000 -3.4030 -3.9746 0.5000</waypoint>
+        <waypoint>114.1500 -3.3732 -4.2246 0.5000</waypoint>
+        <waypoint>115.3500 -3.2099 -4.7611 0.5000</waypoint>
+        <waypoint>116.1500 -3.0567 -5.1038 0.5000</waypoint>
+        <waypoint>117.6000 -2.7208 -5.6990 0.5000</waypoint>
+        <waypoint>118.8000 -2.3859 -6.1547 0.5000</waypoint>
+        <waypoint>119.8000 -2.1376 -6.5525 0.5000</waypoint>
+        <waypoint>120.8500 -1.8368 -6.9461 0.5000</waypoint>
+        <waypoint>122.1000 -1.4392 -7.3819 0.5000</waypoint>
+        <waypoint>122.4500 -1.3501 -7.5192 0.5000</waypoint>
+        <waypoint>122.8500 -1.2804 -7.6873 0.5000</waypoint>
+        <waypoint>123.8000 -1.1451 -7.2636 0.5000</waypoint>
+        <waypoint>124.3000 -1.1015 -7.0332 0.5000</waypoint>
+        <waypoint>124.3500 -1.1026 -7.0330 0.5000</waypoint>
+        <waypoint>124.7500 -1.1520 -7.2789 0.5000</waypoint>
+        <waypoint>125.1500 -1.2012 -7.4933 0.5000</waypoint>
+        <waypoint>125.5500 -1.2758 -7.6809 0.5000</waypoint>
+        <waypoint>125.6000 -1.2865 -7.6741 0.5000</waypoint>
+        <waypoint>126.2000 -1.4185 -7.4151 0.5000</waypoint>
+        <waypoint>127.1500 -1.6481 -7.0263 0.5000</waypoint>
+        <waypoint>128.6000 -2.1041 -6.5268 0.5000</waypoint>
+        <waypoint>129.0000 -2.2498 -6.4140 0.5000</waypoint>
+        <waypoint>129.3500 -2.3932 -6.3466 0.5000</waypoint>
+        <waypoint>129.9000 -2.6350 -6.2801 0.5000</waypoint>
+        <waypoint>130.8000 -3.0478 -6.2016 0.5000</waypoint>
+        <waypoint>131.3000 -3.2667 -6.1228 0.5000</waypoint>
+        <waypoint>131.8000 -3.4714 -6.0115 0.5000</waypoint>
+        <waypoint>133.0000 -3.9433 -5.7012 0.5000</waypoint>
+        <waypoint>133.3500 -4.0896 -5.6292 0.5000</waypoint>
+        <waypoint>133.8500 -4.3124 -5.5738 0.5000</waypoint>
+        <waypoint>134.8500 -4.7749 -5.5558 0.5000</waypoint>
+        <waypoint>135.2500 -4.9573 -5.5250 0.5000</waypoint>
+        <waypoint>135.7500 -5.1732 -5.4443 0.5000</waypoint>
+        <waypoint>136.7500 -5.5921 -5.2356 0.5000</waypoint>
+        <waypoint>137.4500 -5.9052 -5.1424 0.5000</waypoint>
+        <waypoint>138.2500 -6.2760 -5.1060 0.5000</waypoint>
+        <waypoint>139.0000 -6.6224 -5.1494 0.5000</waypoint>
+        <waypoint>139.3500 -6.7769 -5.1986 0.5000</waypoint>
+        <waypoint>141.1000 -7.5334 -5.5177 0.5000</waypoint>
+        <waypoint>141.6000 -7.7419 -5.6277 0.5000</waypoint>
+        <waypoint>142.1500 -7.9578 -5.7704 0.5000</waypoint>
+        <waypoint>143.2500 -8.3356 -6.1210 0.5000</waypoint>
+        <waypoint>144.2000 -8.6777 -6.4108 0.5000</waypoint>
+        <waypoint>144.2500 -8.6800 -6.4258 0.5000</waypoint>
+        <waypoint>145.0000 -8.3957 -6.6376 0.5000</waypoint>
+        <waypoint>145.5500 -8.1701 -6.7637 0.5000</waypoint>
+        <waypoint>146.0500 -7.9508 -6.8459 0.5000</waypoint>
+        <waypoint>147.5500 -7.2752 -7.0511 0.5000</waypoint>
+        <waypoint>147.9500 -7.0917 -7.0881 0.5000</waypoint>
+        <waypoint>148.3000 -6.9295 -7.0970 0.5000</waypoint>
+        <waypoint>149.5500 -6.3516 -7.0387 0.5000</waypoint>
+        <waypoint>149.8500 -6.2143 -7.0522 0.5000</waypoint>
+        <waypoint>150.1000 -6.1062 -7.0826 0.5000</waypoint>
+        <waypoint>150.4500 -5.9741 -7.1597 0.5000</waypoint>
+        <waypoint>150.8500 -5.8423 -7.2787 0.5000</waypoint>
+        <waypoint>152.0000 -5.5096 -7.6838 0.5000</waypoint>
+        <waypoint>152.4000 -5.3798 -7.5492 0.5000</waypoint>
+        <waypoint>153.0000 -5.1616 -7.3751 0.5000</waypoint>
+        <waypoint>154.7500 -4.5679 -6.8066 0.5000</waypoint>
+        <waypoint>157.2000 -3.6619 -6.0883 0.5000</waypoint>
+        <waypoint>157.9000 -3.3879 -5.9031 0.5000</waypoint>
+        <waypoint>160.0000 -2.5157 -5.4327 0.5000</waypoint>
+        <waypoint>160.3500 -2.3870 -5.3367 0.5000</waypoint>
+        <waypoint>160.6500 -2.3135 -5.2308 0.5000</waypoint>
+        <waypoint>161.0000 -2.2696 -5.0900 0.5000</waypoint>
+        <waypoint>161.8500 -2.2635 -4.7157 0.5000</waypoint>
+        <waypoint>162.4500 -2.2274 -4.4422 0.5000</waypoint>
+        <waypoint>162.8500 -2.1687 -4.2677 0.5000</waypoint>
+        <waypoint>163.5500 -2.0244 -3.9763 0.5000</waypoint>
+        <waypoint>164.2000 -1.8340 -3.7445 0.5000</waypoint>
+        <waypoint>164.9000 -1.5887 -3.5297 0.5000</waypoint>
+        <waypoint>165.3500 -1.4045 -3.4368 0.5000</waypoint>
+        <waypoint>165.9000 -1.1602 -3.3792 0.5000</waypoint>
+        <waypoint>166.2000 -1.0282 -3.3882 0.5000</waypoint>
+        <waypoint>166.5000 -0.9020 -3.4256 0.5000</waypoint>
+        <waypoint>167.0500 -0.6773 -3.5311 0.5000</waypoint>
+        <waypoint>168.1500 -0.2284 -3.7783 0.5000</waypoint>
+        <waypoint>168.7000 0.0145 -3.8608 0.5000</waypoint>
+        <waypoint>169.0500 0.1741 -3.8958 0.5000</waypoint>
+        <waypoint>169.6500 0.4530 -3.9116 0.5000</waypoint>
+        <waypoint>170.6500 0.9167 -3.8547 0.5000</waypoint>
+        <waypoint>171.6000 1.3630 -3.8514 0.5000</waypoint>
+        <waypoint>172.8500 1.9476 -3.9247 0.5000</waypoint>
+        <waypoint>174.5000 2.7256 -3.9432 0.5000</waypoint>
+        <waypoint>175.5500 3.2133 -4.0246 0.5000</waypoint>
+        <waypoint>175.9500 3.3912 -4.0796 0.5000</waypoint>
+        <waypoint>176.2500 3.5108 -4.1458 0.5000</waypoint>
+        <waypoint>176.6500 3.6540 -4.2591 0.5000</waypoint>
+        <waypoint>177.2000 3.8354 -4.4384 0.5000</waypoint>
+        <waypoint>177.6000 3.9523 -4.5836 0.5000</waypoint>
+        <waypoint>179.2000 4.3052 -5.2433 0.5000</waypoint>
+        <waypoint>179.5500 4.3647 -5.3963 0.5000</waypoint>
+        <waypoint>179.9500 4.4115 -5.5775 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_4">
+      <pose>-3.2099 -6.9594 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.061174</ixx><iyy>1.061174</iyy><izz>0.455680</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.30188755792305777</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.30188755792305777</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 -3.2099 -6.9594 0.5000</waypoint>
+        <waypoint>0.2000 -3.1988 -6.9518 0.5000</waypoint>
+        <waypoint>0.4500 -3.1644 -6.9230 0.5000</waypoint>
+        <waypoint>1.0000 -3.0342 -6.8259 0.5000</waypoint>
+        <waypoint>1.6000 -2.8425 -6.7101 0.5000</waypoint>
+        <waypoint>2.5500 -2.4887 -6.5522 0.5000</waypoint>
+        <waypoint>3.0500 -2.3233 -6.4303 0.5000</waypoint>
+        <waypoint>4.7500 -1.7978 -5.9449 0.5000</waypoint>
+        <waypoint>5.4000 -1.6101 -5.7436 0.5000</waypoint>
+        <waypoint>5.8000 -1.5183 -5.6034 0.5000</waypoint>
+        <waypoint>6.9000 -1.3046 -5.1927 0.5000</waypoint>
+        <waypoint>8.5500 -0.8829 -4.6357 0.5000</waypoint>
+        <waypoint>9.1500 -0.6975 -4.4637 0.5000</waypoint>
+        <waypoint>10.5000 -0.2470 -4.1119 0.5000</waypoint>
+        <waypoint>11.5500 0.0521 -3.7833 0.5000</waypoint>
+        <waypoint>12.5500 0.3028 -3.4431 0.5000</waypoint>
+        <waypoint>13.1000 0.3964 -3.2346 0.5000</waypoint>
+        <waypoint>15.2000 0.6241 -2.3780 0.5000</waypoint>
+        <waypoint>16.4500 0.7380 -1.8591 0.5000</waypoint>
+        <waypoint>16.8000 0.7918 -1.7226 0.5000</waypoint>
+        <waypoint>17.2000 0.8753 -1.5781 0.5000</waypoint>
+        <waypoint>17.7000 1.0031 -1.4137 0.5000</waypoint>
+        <waypoint>18.2500 1.1719 -1.2580 0.5000</waypoint>
+        <waypoint>19.6000 1.6476 -0.9523 0.5000</waypoint>
+        <waypoint>19.9500 1.7641 -0.8622 0.5000</waypoint>
+        <waypoint>20.7500 1.9848 -0.6119 0.5000</waypoint>
+        <waypoint>21.2500 2.1080 -0.4422 0.5000</waypoint>
+        <waypoint>22.6500 2.3527 0.0925 0.5000</waypoint>
+        <waypoint>23.0000 2.3805 0.2341 0.5000</waypoint>
+        <waypoint>23.4000 2.3791 0.3975 0.5000</waypoint>
+        <waypoint>23.7000 2.3528 0.5159 0.5000</waypoint>
+        <waypoint>24.0000 2.3034 0.6251 0.5000</waypoint>
+        <waypoint>25.4500 1.9619 1.1169 0.5000</waypoint>
+        <waypoint>25.8000 1.9182 1.2515 0.5000</waypoint>
+        <waypoint>26.1500 1.9094 1.3906 0.5000</waypoint>
+        <waypoint>26.6000 1.9405 1.5679 0.5000</waypoint>
+        <waypoint>28.3000 2.1275 2.2533 0.5000</waypoint>
+        <waypoint>28.7500 2.2042 2.4260 0.5000</waypoint>
+        <waypoint>29.1500 2.3019 2.5583 0.5000</waypoint>
+        <waypoint>30.3500 2.6740 2.8927 0.5000</waypoint>
+        <waypoint>32.2500 3.3155 3.3786 0.5000</waypoint>
+        <waypoint>32.8000 3.5136 3.4972 0.5000</waypoint>
+        <waypoint>34.3500 4.1227 3.7335 0.5000</waypoint>
+        <waypoint>34.7500 4.2866 3.7583 0.5000</waypoint>
+        <waypoint>35.3000 4.5134 3.7494 0.5000</waypoint>
+        <waypoint>35.6000 4.6359 3.7606 0.5000</waypoint>
+        <waypoint>35.9500 4.7672 3.8072 0.5000</waypoint>
+        <waypoint>36.5000 4.9655 3.9125 0.5000</waypoint>
+        <waypoint>37.0500 5.1384 4.0565 0.5000</waypoint>
+        <waypoint>38.0000 5.3781 4.3689 0.5000</waypoint>
+        <waypoint>38.5500 5.5490 4.5198 0.5000</waypoint>
+        <waypoint>38.9500 5.6919 4.6033 0.5000</waypoint>
+        <waypoint>40.3000 6.2154 4.8182 0.5000</waypoint>
+        <waypoint>40.7500 6.3839 4.9053 0.5000</waypoint>
+        <waypoint>41.9500 6.8009 5.1947 0.5000</waypoint>
+        <waypoint>43.6000 7.3538 5.6233 0.5000</waypoint>
+        <waypoint>44.3500 7.6239 5.7910 0.5000</waypoint>
+        <waypoint>44.7500 7.7798 5.8475 0.5000</waypoint>
+        <waypoint>45.1500 7.9415 5.8643 0.5000</waypoint>
+        <waypoint>46.2000 8.3798 5.8611 0.5000</waypoint>
+        <waypoint>46.9500 8.6940 5.8222 0.5000</waypoint>
+        <waypoint>47.6000 8.4323 5.7682 0.5000</waypoint>
+        <waypoint>48.4000 8.0973 5.7201 0.5000</waypoint>
+        <waypoint>48.7000 7.9741 5.7283 0.5000</waypoint>
+        <waypoint>49.0500 7.8383 5.7679 0.5000</waypoint>
+        <waypoint>49.6000 7.6458 5.8789 0.5000</waypoint>
+        <waypoint>52.5000 6.6884 6.6325 0.5000</waypoint>
+        <waypoint>53.0000 6.5027 6.7287 0.5000</waypoint>
+        <waypoint>53.8000 6.1832 6.8242 0.5000</waypoint>
+        <waypoint>54.2500 5.9975 6.8491 0.5000</waypoint>
+        <waypoint>55.6000 5.4294 6.8566 0.5000</waypoint>
+        <waypoint>57.3500 4.6926 6.7871 0.5000</waypoint>
+        <waypoint>57.9500 4.4421 6.8144 0.5000</waypoint>
+        <waypoint>58.4500 4.2410 6.8720 0.5000</waypoint>
+        <waypoint>58.9000 4.0838 6.9656 0.5000</waypoint>
+        <waypoint>59.3500 3.9704 7.1022 0.5000</waypoint>
+        <waypoint>60.1500 3.8230 7.3929 0.5000</waypoint>
+        <waypoint>60.9000 3.7278 7.6912 0.5000</waypoint>
+        <waypoint>60.9500 3.7233 7.6858 0.5000</waypoint>
+        <waypoint>61.8500 3.6560 7.3130 0.5000</waypoint>
+        <waypoint>63.5000 3.6685 6.6203 0.5000</waypoint>
+        <waypoint>64.2500 3.5966 6.3172 0.5000</waypoint>
+        <waypoint>64.7000 3.5185 6.1479 0.5000</waypoint>
+        <waypoint>65.3000 3.3693 5.9493 0.5000</waypoint>
+        <waypoint>65.8000 3.2215 5.8020 0.5000</waypoint>
+        <waypoint>67.1000 2.7737 5.4876 0.5000</waypoint>
+        <waypoint>68.0500 2.4816 5.2174 0.5000</waypoint>
+        <waypoint>69.1000 2.1009 4.9968 0.5000</waypoint>
+        <waypoint>69.9000 1.7889 4.8700 0.5000</waypoint>
+        <waypoint>70.7500 1.4382 4.8290 0.5000</waypoint>
+        <waypoint>72.0500 0.8930 4.8583 0.5000</waypoint>
+        <waypoint>73.4500 0.3124 4.9669 0.5000</waypoint>
+        <waypoint>73.8500 0.1451 4.9654 0.5000</waypoint>
+        <waypoint>74.2500 -0.0155 4.9295 0.5000</waypoint>
+        <waypoint>75.1500 -0.3517 4.7701 0.5000</waypoint>
+        <waypoint>76.0000 -0.6522 4.5779 0.5000</waypoint>
+        <waypoint>77.1000 -1.0594 4.3510 0.5000</waypoint>
+        <waypoint>78.9500 -1.7862 4.0583 0.5000</waypoint>
+        <waypoint>80.6000 -2.3775 3.6863 0.5000</waypoint>
+        <waypoint>80.9500 -2.5086 3.6197 0.5000</waypoint>
+        <waypoint>81.6500 -2.7879 3.5324 0.5000</waypoint>
+        <waypoint>83.3500 -3.4931 3.3896 0.5000</waypoint>
+        <waypoint>84.4500 -3.9547 3.3995 0.5000</waypoint>
+        <waypoint>85.8000 -4.5253 3.3794 0.5000</waypoint>
+        <waypoint>86.6000 -4.8630 3.3482 0.5000</waypoint>
+        <waypoint>87.0500 -5.0481 3.3069 0.5000</waypoint>
+        <waypoint>87.6000 -5.2588 3.2155 0.5000</waypoint>
+        <waypoint>89.1000 -5.7988 2.8855 0.5000</waypoint>
+        <waypoint>90.1000 -6.1943 2.7424 0.5000</waypoint>
+        <waypoint>90.5500 -6.3663 2.6625 0.5000</waypoint>
+        <waypoint>92.1500 -6.9226 2.2793 0.5000</waypoint>
+        <waypoint>93.2000 -7.3141 2.0683 0.5000</waypoint>
+        <waypoint>95.6000 -8.2777 1.7531 0.5000</waypoint>
+        <waypoint>96.6000 -8.6899 1.6543 0.5000</waypoint>
+        <waypoint>96.6500 -8.6856 1.6521 0.5000</waypoint>
+        <waypoint>97.1000 -8.5008 1.6162 0.5000</waypoint>
+        <waypoint>98.0000 -8.1577 1.4691 0.5000</waypoint>
+        <waypoint>99.0000 -7.7527 1.3556 0.5000</waypoint>
+        <waypoint>100.1500 -7.2694 1.3096 0.5000</waypoint>
+        <waypoint>102.0500 -6.4746 1.1821 0.5000</waypoint>
+        <waypoint>102.4000 -6.3281 1.1807 0.5000</waypoint>
+        <waypoint>102.7500 -6.1861 1.2065 0.5000</waypoint>
+        <waypoint>103.1000 -6.0528 1.2582 0.5000</waypoint>
+        <waypoint>103.5500 -5.8914 1.3498 0.5000</waypoint>
+        <waypoint>104.2500 -5.6772 1.5440 0.5000</waypoint>
+        <waypoint>105.0500 -5.4722 1.8094 0.5000</waypoint>
+        <waypoint>106.4500 -5.1604 2.3129 0.5000</waypoint>
+        <waypoint>107.4000 -4.8962 2.6154 0.5000</waypoint>
+        <waypoint>107.4500 -4.9129 2.6256 0.5000</waypoint>
+        <waypoint>107.7000 -5.0676 2.6619 0.5000</waypoint>
+        <waypoint>108.0000 -5.2302 2.7019 0.5000</waypoint>
+        <waypoint>108.5500 -5.4955 2.7522 0.5000</waypoint>
+        <waypoint>109.5000 -5.9153 2.7768 0.5000</waypoint>
+        <waypoint>109.9500 -6.1018 2.7521 0.5000</waypoint>
+        <waypoint>110.3500 -6.2533 2.6902 0.5000</waypoint>
+        <waypoint>110.7500 -6.3927 2.6030 0.5000</waypoint>
+        <waypoint>112.2000 -6.8530 2.2058 0.5000</waypoint>
+        <waypoint>113.0000 -7.1322 2.0165 0.5000</waypoint>
+        <waypoint>113.6000 -7.3596 1.9065 0.5000</waypoint>
+        <waypoint>114.1500 -7.5799 1.8363 0.5000</waypoint>
+        <waypoint>114.4500 -7.7029 1.8163 0.5000</waypoint>
+        <waypoint>114.9500 -7.9049 1.8349 0.5000</waypoint>
+        <waypoint>115.4000 -8.0764 1.8965 0.5000</waypoint>
+        <waypoint>116.5500 -8.4831 2.1482 0.5000</waypoint>
+        <waypoint>117.2000 -8.6950 2.3121 0.5000</waypoint>
+        <waypoint>117.8500 -8.4860 2.4873 0.5000</waypoint>
+        <waypoint>119.0000 -8.0631 2.7124 0.5000</waypoint>
+        <waypoint>119.7000 -7.8304 2.8915 0.5000</waypoint>
+        <waypoint>120.1000 -7.7160 3.0134 0.5000</waypoint>
+        <waypoint>120.9500 -7.5038 3.2989 0.5000</waypoint>
+        <waypoint>122.2500 -7.1008 3.6683 0.5000</waypoint>
+        <waypoint>123.7500 -6.6943 4.1546 0.5000</waypoint>
+        <waypoint>124.3000 -6.5147 4.2979 0.5000</waypoint>
+        <waypoint>124.9000 -6.2975 4.4250 0.5000</waypoint>
+        <waypoint>125.5000 -6.0620 4.5120 0.5000</waypoint>
+        <waypoint>126.0500 -5.8364 4.5512 0.5000</waypoint>
+        <waypoint>126.5500 -5.6294 4.5421 0.5000</waypoint>
+        <waypoint>127.3000 -5.3239 4.4789 0.5000</waypoint>
+        <waypoint>128.2000 -4.9469 4.4434 0.5000</waypoint>
+        <waypoint>129.8000 -4.2737 4.5013 0.5000</waypoint>
+        <waypoint>131.0500 -3.7456 4.4903 0.5000</waypoint>
+        <waypoint>132.5000 -3.1442 4.5806 0.5000</waypoint>
+        <waypoint>133.0500 -2.9285 4.6520 0.5000</waypoint>
+        <waypoint>133.5500 -2.7456 4.7504 0.5000</waypoint>
+        <waypoint>134.3000 -2.4916 4.9363 0.5000</waypoint>
+        <waypoint>134.9000 -2.3113 5.1130 0.5000</waypoint>
+        <waypoint>135.3000 -2.2236 5.2517 0.5000</waypoint>
+        <waypoint>135.6000 -2.1759 5.3647 0.5000</waypoint>
+        <waypoint>136.0000 -2.1379 5.5241 0.5000</waypoint>
+        <waypoint>136.4000 -2.1198 5.6887 0.5000</waypoint>
+        <waypoint>136.8000 -2.1248 5.8549 0.5000</waypoint>
+        <waypoint>137.1500 -2.1509 5.9975 0.5000</waypoint>
+        <waypoint>137.6500 -2.2179 6.1942 0.5000</waypoint>
+        <waypoint>138.0000 -2.2860 6.3216 0.5000</waypoint>
+        <waypoint>138.5000 -2.4245 6.4678 0.5000</waypoint>
+        <waypoint>139.0000 -2.6026 6.5476 0.5000</waypoint>
+        <waypoint>139.5500 -2.8173 6.5575 0.5000</waypoint>
+        <waypoint>140.4500 -3.1857 6.5192 0.5000</waypoint>
+        <waypoint>140.8000 -3.3202 6.4693 0.5000</waypoint>
+        <waypoint>141.6500 -3.6332 6.3048 0.5000</waypoint>
+        <waypoint>142.6000 -3.9968 6.1422 0.5000</waypoint>
+        <waypoint>143.0500 -4.1304 6.0192 0.5000</waypoint>
+        <waypoint>144.0000 -4.3798 5.7138 0.5000</waypoint>
+        <waypoint>144.7000 -4.5200 5.4568 0.5000</waypoint>
+        <waypoint>145.7000 -4.6886 5.0700 0.5000</waypoint>
+        <waypoint>146.2500 -4.7635 4.8507 0.5000</waypoint>
+        <waypoint>147.0500 -4.8211 4.5192 0.5000</waypoint>
+        <waypoint>147.9000 -4.8009 4.1629 0.5000</waypoint>
+        <waypoint>148.3000 -4.7591 4.0015 0.5000</waypoint>
+        <waypoint>148.8000 -4.6680 3.8160 0.5000</waypoint>
+        <waypoint>149.2500 -4.5638 3.6598 0.5000</waypoint>
+        <waypoint>150.0500 -4.3498 3.4002 0.5000</waypoint>
+        <waypoint>150.4500 -4.2677 3.2555 0.5000</waypoint>
+        <waypoint>152.2500 -4.0277 2.5387 0.5000</waypoint>
+        <waypoint>152.6500 -3.9622 2.3834 0.5000</waypoint>
+        <waypoint>153.8000 -3.7000 1.9774 0.5000</waypoint>
+        <waypoint>154.5500 -3.5522 1.6976 0.5000</waypoint>
+        <waypoint>155.8000 -3.2327 1.2819 0.5000</waypoint>
+        <waypoint>156.6000 -3.0621 0.9898 0.5000</waypoint>
+        <waypoint>157.4500 -2.9133 0.6618 0.5000</waypoint>
+        <waypoint>158.0000 -2.8342 0.4427 0.5000</waypoint>
+        <waypoint>158.9500 -2.7270 0.0560 0.5000</waypoint>
+        <waypoint>159.6000 -2.6141 -0.1939 0.5000</waypoint>
+        <waypoint>160.9500 -2.2947 -0.6663 0.5000</waypoint>
+        <waypoint>162.2500 -1.9635 -1.1083 0.5000</waypoint>
+        <waypoint>162.5500 -1.9006 -1.2164 0.5000</waypoint>
+        <waypoint>163.3500 -1.7866 -1.5298 0.5000</waypoint>
+        <waypoint>164.5500 -1.7064 -2.0292 0.5000</waypoint>
+        <waypoint>165.0500 -1.6517 -2.2328 0.5000</waypoint>
+        <waypoint>166.3000 -1.4334 -2.7138 0.5000</waypoint>
+        <waypoint>166.9500 -1.2736 -2.9336 0.5000</waypoint>
+        <waypoint>167.8000 -1.0068 -3.1671 0.5000</waypoint>
+        <waypoint>169.0500 -0.6276 -3.5354 0.5000</waypoint>
+        <waypoint>169.4500 -0.4875 -3.6248 0.5000</waypoint>
+        <waypoint>169.8000 -0.3545 -3.6821 0.5000</waypoint>
+        <waypoint>170.1500 -0.2146 -3.7194 0.5000</waypoint>
+        <waypoint>170.4500 -0.0927 -3.7287 0.5000</waypoint>
+        <waypoint>171.3500 0.2745 -3.6818 0.5000</waypoint>
+        <waypoint>172.3000 0.6718 -3.6902 0.5000</waypoint>
+        <waypoint>172.7000 0.8383 -3.6749 0.5000</waypoint>
+        <waypoint>173.2000 1.0274 -3.6022 0.5000</waypoint>
+        <waypoint>173.7500 1.1934 -3.4589 0.5000</waypoint>
+        <waypoint>174.8000 1.4687 -3.1204 0.5000</waypoint>
+        <waypoint>176.1000 1.7787 -2.6672 0.5000</waypoint>
+        <waypoint>176.7000 1.9602 -2.4949 0.5000</waypoint>
+        <waypoint>177.1000 2.1032 -2.4142 0.5000</waypoint>
+        <waypoint>177.9500 2.4368 -2.3003 0.5000</waypoint>
+        <waypoint>179.1000 2.8886 -2.1224 0.5000</waypoint>
+        <waypoint>179.9500 3.2139 -1.9674 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_5">
+      <pose>-8.1449 1.5760 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.120510</ixx><iyy>1.120510</iyy><izz>0.574353</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.3389255272598663</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.3389255272598663</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 -8.1449 1.5760 0.5000</waypoint>
+        <waypoint>0.2500 -8.1714 1.5915 0.5000</waypoint>
+        <waypoint>0.5500 -8.2539 1.6374 0.5000</waypoint>
+        <waypoint>0.9500 -8.4171 1.7218 0.5000</waypoint>
+        <waypoint>1.4000 -8.6456 1.8179 0.5000</waypoint>
+        <waypoint>1.4500 -8.6500 1.8269 0.5000</waypoint>
+        <waypoint>2.0500 -8.3091 1.9518 0.5000</waypoint>
+        <waypoint>2.7000 -7.9449 2.1320 0.5000</waypoint>
+        <waypoint>3.0000 -7.7679 2.1992 0.5000</waypoint>
+        <waypoint>3.9000 -7.2127 2.3324 0.5000</waypoint>
+        <waypoint>4.3500 -6.9291 2.3749 0.5000</waypoint>
+        <waypoint>4.7500 -6.6808 2.3570 0.5000</waypoint>
+        <waypoint>5.9500 -5.9347 2.2161 0.5000</waypoint>
+        <waypoint>7.1000 -5.2006 2.2122 0.5000</waypoint>
+        <waypoint>7.6000 -4.8850 2.1757 0.5000</waypoint>
+        <waypoint>8.5500 -4.3037 2.0106 0.5000</waypoint>
+        <waypoint>9.5000 -3.7394 1.7814 0.5000</waypoint>
+        <waypoint>9.8000 -3.5701 1.6919 0.5000</waypoint>
+        <waypoint>10.1000 -3.4134 1.5841 0.5000</waypoint>
+        <waypoint>10.4500 -3.2500 1.4358 0.5000</waypoint>
+        <waypoint>10.7000 -3.1465 1.3180 0.5000</waypoint>
+        <waypoint>11.3000 -2.9666 0.9923 0.5000</waypoint>
+        <waypoint>11.7000 -2.8728 0.7582 0.5000</waypoint>
+        <waypoint>12.0000 -2.8250 0.5756 0.5000</waypoint>
+        <waypoint>12.3500 -2.8018 0.3584 0.5000</waypoint>
+        <waypoint>12.7500 -2.8209 0.1111 0.5000</waypoint>
+        <waypoint>13.4500 -2.9430 -0.3048 0.5000</waypoint>
+        <waypoint>14.3000 -3.0583 -0.8315 0.5000</waypoint>
+        <waypoint>14.7500 -3.1500 -1.1029 0.5000</waypoint>
+        <waypoint>15.2000 -3.2801 -1.3570 0.5000</waypoint>
+        <waypoint>15.6500 -3.4393 -1.5942 0.5000</waypoint>
+        <waypoint>16.0000 -3.5860 -1.7604 0.5000</waypoint>
+        <waypoint>16.5500 -3.8411 -1.9970 0.5000</waypoint>
+        <waypoint>17.1500 -4.0866 -2.2872 0.5000</waypoint>
+        <waypoint>17.6500 -4.2442 -2.5608 0.5000</waypoint>
+        <waypoint>18.0000 -4.3105 -2.7678 0.5000</waypoint>
+        <waypoint>18.4500 -4.3511 -3.0455 0.5000</waypoint>
+        <waypoint>18.8000 -4.3472 -3.2632 0.5000</waypoint>
+        <waypoint>19.9500 -4.1844 -3.9654 0.5000</waypoint>
+        <waypoint>21.1000 -4.1059 -4.6944 0.5000</waypoint>
+        <waypoint>22.0000 -4.0225 -5.2648 0.5000</waypoint>
+        <waypoint>22.3500 -4.0092 -5.4881 0.5000</waypoint>
+        <waypoint>22.6500 -4.0294 -5.6753 0.5000</waypoint>
+        <waypoint>22.9500 -4.0827 -5.8528 0.5000</waypoint>
+        <waypoint>23.3500 -4.1910 -6.0758 0.5000</waypoint>
+        <waypoint>23.7500 -4.3265 -6.2861 0.5000</waypoint>
+        <waypoint>24.2000 -4.5311 -6.4683 0.5000</waypoint>
+        <waypoint>25.2000 -5.0622 -6.7961 0.5000</waypoint>
+        <waypoint>26.4500 -5.6634 -7.3180 0.5000</waypoint>
+        <waypoint>27.0000 -5.9391 -7.5374 0.5000</waypoint>
+        <waypoint>27.3500 -6.1270 -7.6577 0.5000</waypoint>
+        <waypoint>28.9500 -7.0224 -7.1677 0.5000</waypoint>
+        <waypoint>29.3000 -7.2275 -7.0761 0.5000</waypoint>
+        <waypoint>29.6000 -7.4090 -7.0155 0.5000</waypoint>
+        <waypoint>30.0000 -7.6581 -6.9713 0.5000</waypoint>
+        <waypoint>30.5000 -7.9749 -6.9500 0.5000</waypoint>
+        <waypoint>31.5500 -8.6443 -6.9918 0.5000</waypoint>
+        <waypoint>31.6000 -8.6483 -6.9956 0.5000</waypoint>
+        <waypoint>32.8500 -7.8503 -7.0817 0.5000</waypoint>
+        <waypoint>33.6000 -7.3765 -7.1730 0.5000</waypoint>
+        <waypoint>34.2000 -7.0073 -7.2778 0.5000</waypoint>
+        <waypoint>34.5500 -6.7886 -7.3223 0.5000</waypoint>
+        <waypoint>35.5500 -6.1533 -7.3561 0.5000</waypoint>
+        <waypoint>35.9500 -5.8999 -7.3883 0.5000</waypoint>
+        <waypoint>36.4000 -5.6271 -7.4687 0.5000</waypoint>
+        <waypoint>37.0500 -5.2631 -7.6563 0.5000</waypoint>
+        <waypoint>37.6000 -4.9503 -7.5076 0.5000</waypoint>
+        <waypoint>38.7000 -4.3431 -7.1528 0.5000</waypoint>
+        <waypoint>39.6000 -3.8550 -6.8429 0.5000</waypoint>
+        <waypoint>39.9000 -3.6859 -6.7549 0.5000</waypoint>
+        <waypoint>40.3500 -3.4170 -6.6634 0.5000</waypoint>
+        <waypoint>41.3000 -2.8260 -6.5441 0.5000</waypoint>
+        <waypoint>41.8000 -2.5317 -6.4288 0.5000</waypoint>
+        <waypoint>42.1500 -2.3447 -6.3131 0.5000</waypoint>
+        <waypoint>42.5500 -2.1489 -6.1545 0.5000</waypoint>
+        <waypoint>42.8500 -2.0235 -6.0150 0.5000</waypoint>
+        <waypoint>43.7000 -1.7117 -5.5765 0.5000</waypoint>
+        <waypoint>44.0500 -1.5694 -5.4057 0.5000</waypoint>
+        <waypoint>44.7000 -1.2662 -5.1251 0.5000</waypoint>
+        <waypoint>45.0500 -1.0854 -4.9988 0.5000</waypoint>
+        <waypoint>45.5000 -0.8306 -4.8771 0.5000</waypoint>
+        <waypoint>46.4500 -0.2601 -4.6786 0.5000</waypoint>
+        <waypoint>46.8000 -0.0437 -4.6231 0.5000</waypoint>
+        <waypoint>47.4500 0.3642 -4.5519 0.5000</waypoint>
+        <waypoint>48.0500 0.7298 -4.4397 0.5000</waypoint>
+        <waypoint>49.1500 1.3723 -4.1541 0.5000</waypoint>
+        <waypoint>49.7500 1.7312 -4.0213 0.5000</waypoint>
+        <waypoint>50.4500 2.1400 -3.8372 0.5000</waypoint>
+        <waypoint>50.8000 2.3367 -3.7300 0.5000</waypoint>
+        <waypoint>52.3000 3.1247 -3.1804 0.5000</waypoint>
+        <waypoint>52.6000 3.2691 -3.0538 0.5000</waypoint>
+        <waypoint>52.9000 3.3929 -2.9107 0.5000</waypoint>
+        <waypoint>53.1500 3.4711 -2.7776 0.5000</waypoint>
+        <waypoint>53.4500 3.5401 -2.6063 0.5000</waypoint>
+        <waypoint>53.7000 3.5711 -2.4572 0.5000</waypoint>
+        <waypoint>53.9500 3.5794 -2.3052 0.5000</waypoint>
+        <waypoint>54.2500 3.5631 -2.1226 0.5000</waypoint>
+        <waypoint>54.6000 3.5173 -1.9109 0.5000</waypoint>
+        <waypoint>54.6500 3.5242 -1.8870 0.5000</waypoint>
+        <waypoint>55.5000 3.9433 -1.5710 0.5000</waypoint>
+        <waypoint>56.0000 4.2187 -1.4197 0.5000</waypoint>
+        <waypoint>56.5500 4.5442 -1.2964 0.5000</waypoint>
+        <waypoint>58.1500 5.5340 -1.0405 0.5000</waypoint>
+        <waypoint>58.5000 5.7369 -0.9517 0.5000</waypoint>
+        <waypoint>58.7500 5.8655 -0.8655 0.5000</waypoint>
+        <waypoint>59.3500 6.1320 -0.6065 0.5000</waypoint>
+        <waypoint>59.7000 6.2677 -0.4345 0.5000</waypoint>
+        <waypoint>60.2000 6.4293 -0.1640 0.5000</waypoint>
+        <waypoint>61.0000 6.6452 0.2943 0.5000</waypoint>
+        <waypoint>61.5000 6.8126 0.5654 0.5000</waypoint>
+        <waypoint>61.9000 6.9664 0.7691 0.5000</waypoint>
+        <waypoint>62.4000 7.1908 0.9939 0.5000</waypoint>
+        <waypoint>63.0000 7.4944 1.2245 0.5000</waypoint>
+        <waypoint>64.8000 8.3810 1.9635 0.5000</waypoint>
+        <waypoint>65.2000 8.5395 2.1587 0.5000</waypoint>
+        <waypoint>65.5500 8.6531 2.3473 0.5000</waypoint>
+        <waypoint>65.6000 8.6549 2.3749 0.5000</waypoint>
+        <waypoint>66.1500 8.4640 2.6652 0.5000</waypoint>
+        <waypoint>67.2500 8.0034 3.1936 0.5000</waypoint>
+        <waypoint>67.6000 7.8428 3.3479 0.5000</waypoint>
+        <waypoint>68.5500 7.3776 3.7394 0.5000</waypoint>
+        <waypoint>69.5000 6.8838 4.0981 0.5000</waypoint>
+        <waypoint>70.4000 6.3958 4.4027 0.5000</waypoint>
+        <waypoint>70.7500 6.1923 4.4744 0.5000</waypoint>
+        <waypoint>71.2500 5.8863 4.5113 0.5000</waypoint>
+        <waypoint>71.7500 5.5757 4.4929 0.5000</waypoint>
+        <waypoint>72.3500 5.2056 4.4149 0.5000</waypoint>
+        <waypoint>73.4500 4.5690 4.1360 0.5000</waypoint>
+        <waypoint>74.6000 3.8798 3.8728 0.5000</waypoint>
+        <waypoint>74.9000 3.7093 3.7868 0.5000</waypoint>
+        <waypoint>75.3000 3.4942 3.6507 0.5000</waypoint>
+        <waypoint>76.3000 2.9996 3.2483 0.5000</waypoint>
+        <waypoint>76.8000 2.7288 3.0821 0.5000</waypoint>
+        <waypoint>77.7000 2.2087 2.8358 0.5000</waypoint>
+        <waypoint>78.9500 1.4491 2.5768 0.5000</waypoint>
+        <waypoint>79.8000 0.9183 2.4526 0.5000</waypoint>
+        <waypoint>80.2000 0.6644 2.4167 0.5000</waypoint>
+        <waypoint>80.4500 0.5062 2.4136 0.5000</waypoint>
+        <waypoint>80.6500 0.3838 2.4307 0.5000</waypoint>
+        <waypoint>80.9000 0.2386 2.4762 0.5000</waypoint>
+        <waypoint>81.2500 0.0509 2.5753 0.5000</waypoint>
+        <waypoint>81.5000 -0.0736 2.6643 0.5000</waypoint>
+        <waypoint>82.3000 -0.4133 3.0247 0.5000</waypoint>
+        <waypoint>82.7500 -0.5970 3.2431 0.5000</waypoint>
+        <waypoint>84.2000 -1.1081 4.0140 0.5000</waypoint>
+        <waypoint>84.5500 -1.1911 4.2179 0.5000</waypoint>
+        <waypoint>85.6000 -1.3727 4.8599 0.5000</waypoint>
+        <waypoint>85.9500 -1.4032 5.0792 0.5000</waypoint>
+        <waypoint>86.3000 -1.3974 5.2983 0.5000</waypoint>
+        <waypoint>86.6500 -1.3503 5.5094 0.5000</waypoint>
+        <waypoint>86.9500 -1.2740 5.6756 0.5000</waypoint>
+        <waypoint>88.2500 -0.8020 6.3370 0.5000</waypoint>
+        <waypoint>89.1500 -0.5088 6.8313 0.5000</waypoint>
+        <waypoint>89.6000 -0.3402 7.0641 0.5000</waypoint>
+        <waypoint>89.8500 -0.2323 7.1803 0.5000</waypoint>
+        <waypoint>90.1000 -0.1107 7.2783 0.5000</waypoint>
+        <waypoint>91.2500 0.5125 7.6551 0.5000</waypoint>
+        <waypoint>91.3000 0.5397 7.6510 0.5000</waypoint>
+        <waypoint>91.6000 0.7007 7.5459 0.5000</waypoint>
+        <waypoint>92.0000 0.8925 7.3806 0.5000</waypoint>
+        <waypoint>92.4000 1.0529 7.1867 0.5000</waypoint>
+        <waypoint>93.1000 1.2994 6.8161 0.5000</waypoint>
+        <waypoint>93.3500 1.3730 6.6755 0.5000</waypoint>
+        <waypoint>93.6500 1.4372 6.4981 0.5000</waypoint>
+        <waypoint>94.8000 1.6068 5.7867 0.5000</waypoint>
+        <waypoint>95.2000 1.6384 5.5331 0.5000</waypoint>
+        <waypoint>95.5500 1.6471 5.3098 0.5000</waypoint>
+        <waypoint>95.9500 1.6301 5.0555 0.5000</waypoint>
+        <waypoint>96.3000 1.5928 4.8358 0.5000</waypoint>
+        <waypoint>96.7000 1.5265 4.5898 0.5000</waypoint>
+        <waypoint>97.1000 1.4364 4.3513 0.5000</waypoint>
+        <waypoint>97.5500 1.3019 4.0990 0.5000</waypoint>
+        <waypoint>97.8500 1.1917 3.9451 0.5000</waypoint>
+        <waypoint>98.3500 0.9637 3.7327 0.5000</waypoint>
+        <waypoint>98.7000 0.7753 3.6410 0.5000</waypoint>
+        <waypoint>99.0500 0.5729 3.6121 0.5000</waypoint>
+        <waypoint>100.0500 -0.0452 3.5970 0.5000</waypoint>
+        <waypoint>100.5500 -0.3611 3.6166 0.5000</waypoint>
+        <waypoint>100.8500 -0.5460 3.6543 0.5000</waypoint>
+        <waypoint>101.1000 -0.6911 3.7090 0.5000</waypoint>
+        <waypoint>101.8000 -1.0844 3.8996 0.5000</waypoint>
+        <waypoint>102.1000 -1.2646 3.9550 0.5000</waypoint>
+        <waypoint>102.4000 -1.4498 3.9900 0.5000</waypoint>
+        <waypoint>103.0000 -1.8272 4.0128 0.5000</waypoint>
+        <waypoint>103.6500 -2.2315 3.9485 0.5000</waypoint>
+        <waypoint>104.3500 -2.6616 3.8311 0.5000</waypoint>
+        <waypoint>105.0500 -3.0593 3.6331 0.5000</waypoint>
+        <waypoint>105.9000 -3.5026 3.3221 0.5000</waypoint>
+        <waypoint>106.8500 -3.9674 2.9280 0.5000</waypoint>
+        <waypoint>107.4000 -4.2507 2.7203 0.5000</waypoint>
+        <waypoint>107.4500 -4.2500 2.7037 0.5000</waypoint>
+        <waypoint>107.8500 -4.1275 2.5581 0.5000</waypoint>
+        <waypoint>108.5000 -3.9054 2.2615 0.5000</waypoint>
+        <waypoint>108.9000 -3.7374 2.0838 0.5000</waypoint>
+        <waypoint>109.5500 -3.4323 1.8123 0.5000</waypoint>
+        <waypoint>110.0000 -3.2313 1.6094 0.5000</waypoint>
+        <waypoint>110.9500 -2.8511 1.1404 0.5000</waypoint>
+        <waypoint>111.3000 -2.6800 1.0073 0.5000</waypoint>
+        <waypoint>112.2500 -2.1538 0.7366 0.5000</waypoint>
+        <waypoint>112.4500 -2.0590 0.6594 0.5000</waypoint>
+        <waypoint>112.7000 -1.9659 0.5443 0.5000</waypoint>
+        <waypoint>113.1500 -1.8356 0.3063 0.5000</waypoint>
+        <waypoint>113.5000 -1.7502 0.1072 0.5000</waypoint>
+        <waypoint>114.5500 -1.5896 -0.5353 0.5000</waypoint>
+        <waypoint>114.8000 -1.5392 -0.6856 0.5000</waypoint>
+        <waypoint>116.3500 -1.1182 -1.5811 0.5000</waypoint>
+        <waypoint>117.3500 -0.9056 -2.1840 0.5000</waypoint>
+        <waypoint>117.8500 -0.7669 -2.4721 0.5000</waypoint>
+        <waypoint>118.6500 -0.4998 -2.9078 0.5000</waypoint>
+        <waypoint>119.1000 -0.3834 -3.1691 0.5000</waypoint>
+        <waypoint>119.4500 -0.3251 -3.3825 0.5000</waypoint>
+        <waypoint>119.9500 -0.2769 -3.6956 0.5000</waypoint>
+        <waypoint>120.3500 -0.2724 -3.9488 0.5000</waypoint>
+        <waypoint>120.7500 -0.2975 -4.2009 0.5000</waypoint>
+        <waypoint>122.2500 -0.5015 -5.1374 0.5000</waypoint>
+        <waypoint>122.6500 -0.5696 -5.3847 0.5000</waypoint>
+        <waypoint>123.8000 -0.8270 -6.0756 0.5000</waypoint>
+        <waypoint>124.3000 -0.9689 -6.3628 0.5000</waypoint>
+        <waypoint>124.3500 -0.9809 -6.3709 0.5000</waypoint>
+        <waypoint>124.7500 -1.0351 -6.1796 0.5000</waypoint>
+        <waypoint>125.1000 -1.0647 -5.9854 0.5000</waypoint>
+        <waypoint>125.7500 -1.0391 -5.6050 0.5000</waypoint>
+        <waypoint>126.4000 -1.0627 -5.2047 0.5000</waypoint>
+        <waypoint>126.7500 -1.1182 -4.9957 0.5000</waypoint>
+        <waypoint>127.8000 -1.3654 -4.3826 0.5000</waypoint>
+        <waypoint>129.2000 -1.8178 -3.6120 0.5000</waypoint>
+        <waypoint>130.0000 -2.1100 -3.1897 0.5000</waypoint>
+        <waypoint>131.3000 -2.6902 -2.5967 0.5000</waypoint>
+        <waypoint>132.2500 -3.0924 -2.1384 0.5000</waypoint>
+        <waypoint>133.1000 -3.4849 -1.7600 0.5000</waypoint>
+        <waypoint>133.5500 -3.6564 -1.5340 0.5000</waypoint>
+        <waypoint>134.0500 -3.7928 -1.2522 0.5000</waypoint>
+        <waypoint>135.5500 -4.1316 -0.3566 0.5000</waypoint>
+        <waypoint>136.1500 -4.2563 0.0075 0.5000</waypoint>
+        <waypoint>136.5000 -4.2904 0.2250 0.5000</waypoint>
+        <waypoint>136.9000 -4.2871 0.4752 0.5000</waypoint>
+        <waypoint>137.4000 -4.2390 0.7848 0.5000</waypoint>
+        <waypoint>138.0000 -4.2105 1.1639 0.5000</waypoint>
+        <waypoint>138.3500 -4.1754 1.3831 0.5000</waypoint>
+        <waypoint>139.1500 -4.0313 1.8708 0.5000</waypoint>
+        <waypoint>141.0500 -3.6424 3.0267 0.5000</waypoint>
+        <waypoint>141.4000 -3.5364 3.2186 0.5000</waypoint>
+        <waypoint>141.9000 -3.3305 3.4508 0.5000</waypoint>
+        <waypoint>142.3000 -3.1379 3.6109 0.5000</waypoint>
+        <waypoint>142.9500 -2.7819 3.8075 0.5000</waypoint>
+        <waypoint>143.3000 -2.6039 3.9353 0.5000</waypoint>
+        <waypoint>143.7500 -2.4221 4.1443 0.5000</waypoint>
+        <waypoint>144.1500 -2.2906 4.3549 0.5000</waypoint>
+        <waypoint>144.5000 -2.2130 4.5570 0.5000</waypoint>
+        <waypoint>145.1500 -2.0998 4.9491 0.5000</waypoint>
+        <waypoint>145.7500 -1.9466 5.2954 0.5000</waypoint>
+        <waypoint>146.4000 -1.8036 5.6843 0.5000</waypoint>
+        <waypoint>147.0500 -1.7005 6.0859 0.5000</waypoint>
+        <waypoint>147.4500 -1.6645 6.3388 0.5000</waypoint>
+        <waypoint>147.7500 -1.6659 6.5276 0.5000</waypoint>
+        <waypoint>148.0000 -1.6975 6.6769 0.5000</waypoint>
+        <waypoint>148.3000 -1.7766 6.8349 0.5000</waypoint>
+        <waypoint>148.6500 -1.9065 6.9974 0.5000</waypoint>
+        <waypoint>148.9500 -2.0461 7.1084 0.5000</waypoint>
+        <waypoint>149.3000 -2.2309 7.2114 0.5000</waypoint>
+        <waypoint>149.9500 -2.5978 7.3792 0.5000</waypoint>
+        <waypoint>150.4000 -2.8348 7.5334 0.5000</waypoint>
+        <waypoint>150.7000 -2.9816 7.6528 0.5000</waypoint>
+        <waypoint>150.7500 -3.0043 7.6480 0.5000</waypoint>
+        <waypoint>151.3500 -3.2720 7.3779 0.5000</waypoint>
+        <waypoint>152.3500 -3.7031 6.9050 0.5000</waypoint>
+        <waypoint>153.2500 -4.1237 6.5082 0.5000</waypoint>
+        <waypoint>153.6000 -4.2988 6.3689 0.5000</waypoint>
+        <waypoint>154.2000 -4.6268 6.1722 0.5000</waypoint>
+        <waypoint>154.6000 -4.8609 6.0748 0.5000</waypoint>
+        <waypoint>155.0500 -5.1365 6.0223 0.5000</waypoint>
+        <waypoint>155.4000 -5.3543 6.0193 0.5000</waypoint>
+        <waypoint>155.7500 -5.5684 6.0542 0.5000</waypoint>
+        <waypoint>156.4000 -5.9636 6.1616 0.5000</waypoint>
+        <waypoint>157.2000 -6.4612 6.2711 0.5000</waypoint>
+        <waypoint>158.4500 -7.2028 6.5674 0.5000</waypoint>
+        <waypoint>158.9000 -7.4515 6.7103 0.5000</waypoint>
+        <waypoint>160.2500 -8.1606 7.2034 0.5000</waypoint>
+        <waypoint>160.6500 -8.3212 7.3920 0.5000</waypoint>
+        <waypoint>161.1500 -8.4825 7.6597 0.5000</waypoint>
+        <waypoint>161.7500 -8.6607 7.3295 0.5000</waypoint>
+        <waypoint>162.5500 -8.4501 6.8653 0.5000</waypoint>
+        <waypoint>163.1000 -8.3384 6.5320 0.5000</waypoint>
+        <waypoint>163.6500 -8.2538 6.1898 0.5000</waypoint>
+        <waypoint>164.8000 -8.1111 5.4670 0.5000</waypoint>
+        <waypoint>165.3500 -8.0772 5.1173 0.5000</waypoint>
+        <waypoint>165.6500 -8.0929 4.9294 0.5000</waypoint>
+        <waypoint>165.9500 -8.1361 4.7474 0.5000</waypoint>
+        <waypoint>166.6500 -8.2705 4.3250 0.5000</waypoint>
+        <waypoint>167.3500 -8.4351 3.9104 0.5000</waypoint>
+        <waypoint>168.1500 -8.5526 3.4143 0.5000</waypoint>
+        <waypoint>168.7000 -8.5775 3.0663 0.5000</waypoint>
+        <waypoint>168.9500 -8.5564 2.9121 0.5000</waypoint>
+        <waypoint>169.2000 -8.5105 2.7657 0.5000</waypoint>
+        <waypoint>169.7000 -8.3590 2.5003 0.5000</waypoint>
+        <waypoint>170.5000 -8.0575 2.0973 0.5000</waypoint>
+        <waypoint>171.8000 -7.5357 1.4498 0.5000</waypoint>
+        <waypoint>172.5500 -7.2836 1.0415 0.5000</waypoint>
+        <waypoint>173.2000 -7.1333 0.6566 0.5000</waypoint>
+        <waypoint>174.5500 -6.9623 -0.1890 0.5000</waypoint>
+        <waypoint>175.2500 -6.8379 -0.6204 0.5000</waypoint>
+        <waypoint>175.5500 -6.7650 -0.7976 0.5000</waypoint>
+        <waypoint>176.1000 -6.6014 -1.1079 0.5000</waypoint>
+        <waypoint>176.6500 -6.4088 -1.4001 0.5000</waypoint>
+        <waypoint>176.9000 -6.2971 -1.5072 0.5000</waypoint>
+        <waypoint>177.2000 -6.1442 -1.6082 0.5000</waypoint>
+        <waypoint>177.5000 -5.9763 -1.6821 0.5000</waypoint>
+        <waypoint>177.8000 -5.7989 -1.7349 0.5000</waypoint>
+        <waypoint>178.3500 -5.4610 -1.8073 0.5000</waypoint>
+        <waypoint>178.8500 -5.1461 -1.8530 0.5000</waypoint>
+        <waypoint>179.9500 -4.4421 -1.8742 0.5000</waypoint>
+      </plugin>
+    </model>
+  </world>
+</sdf>

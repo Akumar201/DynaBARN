@@ -1,0 +1,524 @@
+<?xml version="1.0" ?>
+<sdf version="1.10">
+  <world name="default">
+    <physics name="default_physics" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry></collision>
+        <visual name="visual"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry><material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+      </link>
+    </model>
+
+    <model name="back_wall">
+      <static>true</static>
+      <pose>-10 0 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>0.5 20 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.5 20 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+    </model>
+    <model name="top_wall">
+      <static>true</static>
+      <pose>0 10 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>20 0.5 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>20 0.5 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+    </model>
+    <model name="bottom_wall">
+      <static>true</static>
+      <pose>0 -10 0.5 0 0 0</pose>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>20 0.5 1.0</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>20 0.5 1.0</size></box></geometry><material><ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+    </model>
+
+    <model name="obs_0">
+      <pose>-8.1247 -7.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.066991</ixx><iyy>1.066991</iyy><izz>0.467316</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.3057173837257841</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.3057173837257841</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 -8.1247 -7.0000 0.5000</waypoint>
+        <waypoint>0.1500 -8.1138 -7.0000 0.5000</waypoint>
+        <waypoint>0.3500 -8.0733 -7.0000 0.5000</waypoint>
+        <waypoint>0.8000 -7.9115 -7.0000 0.5000</waypoint>
+        <waypoint>1.4000 -7.6173 -7.0000 0.5000</waypoint>
+        <waypoint>2.3000 -7.1156 -7.0000 0.5000</waypoint>
+        <waypoint>29.3000 8.6879 -7.0000 0.5000</waypoint>
+        <waypoint>29.3500 8.6820 -7.0000 0.5000</waypoint>
+        <waypoint>29.5000 8.6168 -7.0000 0.5000</waypoint>
+        <waypoint>30.0000 8.3688 -7.0000 0.5000</waypoint>
+        <waypoint>31.5000 7.5214 -7.0000 0.5000</waypoint>
+        <waypoint>59.1000 -8.6450 -7.0000 0.5000</waypoint>
+        <waypoint>59.2000 -8.6933 -7.0000 0.5000</waypoint>
+        <waypoint>59.5000 -8.5694 -7.0000 0.5000</waypoint>
+        <waypoint>60.0000 -8.3172 -7.0000 0.5000</waypoint>
+        <waypoint>61.4500 -7.4960 -7.0000 0.5000</waypoint>
+        <waypoint>89.1000 8.6912 -7.0000 0.5000</waypoint>
+        <waypoint>89.4000 8.5656 -7.0000 0.5000</waypoint>
+        <waypoint>89.8500 8.3369 -7.0000 0.5000</waypoint>
+        <waypoint>91.3000 7.5156 -7.0000 0.5000</waypoint>
+        <waypoint>118.8500 -8.6215 -7.0000 0.5000</waypoint>
+        <waypoint>119.0000 -8.6943 -7.0000 0.5000</waypoint>
+        <waypoint>119.3500 -8.5411 -7.0000 0.5000</waypoint>
+        <waypoint>119.8000 -8.3119 -7.0000 0.5000</waypoint>
+        <waypoint>121.3000 -7.4611 -7.0000 0.5000</waypoint>
+        <waypoint>148.8000 8.6469 -7.0000 0.5000</waypoint>
+        <waypoint>148.9000 8.6943 -7.0000 0.5000</waypoint>
+        <waypoint>149.3000 8.5123 -7.0000 0.5000</waypoint>
+        <waypoint>149.7500 8.2776 -7.0000 0.5000</waypoint>
+        <waypoint>151.2500 7.4225 -7.0000 0.5000</waypoint>
+        <waypoint>178.7000 -8.6561 -7.0000 0.5000</waypoint>
+        <waypoint>178.8000 -8.6904 -7.0000 0.5000</waypoint>
+        <waypoint>178.9500 -8.6281 -7.0000 0.5000</waypoint>
+        <waypoint>179.4000 -8.4118 -7.0000 0.5000</waypoint>
+        <waypoint>179.9500 -8.1148 -7.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_1">
+      <pose>-1.2112 0.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.114056</ixx><iyy>1.114056</iyy><izz>0.561446</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.33509588428673887</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.33509588428673887</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 -1.2112 0.0000 0.5000</waypoint>
+        <waypoint>0.3500 -1.1670 0.0000 0.5000</waypoint>
+        <waypoint>0.7500 -1.0460 0.0000 0.5000</waypoint>
+        <waypoint>1.3000 -0.8193 0.0000 0.5000</waypoint>
+        <waypoint>2.0500 -0.4648 0.0000 0.5000</waypoint>
+        <waypoint>20.0500 8.6110 0.0000 0.5000</waypoint>
+        <waypoint>20.2000 8.6618 0.0000 0.5000</waypoint>
+        <waypoint>20.8000 8.4320 0.0000 0.5000</waypoint>
+        <waypoint>21.7000 8.0104 0.0000 0.5000</waypoint>
+        <waypoint>27.3500 5.1679 0.0000 0.5000</waypoint>
+        <waypoint>27.4500 5.1976 0.0000 0.5000</waypoint>
+        <waypoint>28.4500 5.6850 0.0000 0.5000</waypoint>
+        <waypoint>34.3500 8.6532 0.0000 0.5000</waypoint>
+        <waypoint>34.4000 8.6617 0.0000 0.5000</waypoint>
+        <waypoint>34.4500 8.6451 0.0000 0.5000</waypoint>
+        <waypoint>34.9500 8.4486 0.0000 0.5000</waypoint>
+        <waypoint>35.5000 8.1966 0.0000 0.5000</waypoint>
+        <waypoint>36.3000 7.8053 0.0000 0.5000</waypoint>
+        <waypoint>36.8000 8.0365 0.0000 0.5000</waypoint>
+        <waypoint>38.0000 8.6318 0.0000 0.5000</waypoint>
+        <waypoint>38.1000 8.6617 0.0000 0.5000</waypoint>
+        <waypoint>38.4500 8.5331 0.0000 0.5000</waypoint>
+        <waypoint>38.8500 8.3607 0.0000 0.5000</waypoint>
+        <waypoint>40.2000 7.7068 0.0000 0.5000</waypoint>
+        <waypoint>57.9500 -1.2489 0.0000 0.5000</waypoint>
+        <waypoint>77.4500 8.5998 0.0000 0.5000</waypoint>
+        <waypoint>77.6000 8.6632 0.0000 0.5000</waypoint>
+        <waypoint>77.8500 8.5826 0.0000 0.5000</waypoint>
+        <waypoint>78.2500 8.4189 0.0000 0.5000</waypoint>
+        <waypoint>79.3000 7.9220 0.0000 0.5000</waypoint>
+        <waypoint>89.1500 2.9607 0.0000 0.5000</waypoint>
+        <waypoint>90.9500 3.8960 0.0000 0.5000</waypoint>
+        <waypoint>100.3500 8.6394 0.0000 0.5000</waypoint>
+        <waypoint>100.4500 8.6587 0.0000 0.5000</waypoint>
+        <waypoint>100.6000 8.6082 0.0000 0.5000</waypoint>
+        <waypoint>101.0000 8.4493 0.0000 0.5000</waypoint>
+        <waypoint>101.4500 8.2459 0.0000 0.5000</waypoint>
+        <waypoint>102.3500 8.6625 0.0000 0.5000</waypoint>
+        <waypoint>102.6000 8.5844 0.0000 0.5000</waypoint>
+        <waypoint>103.0000 8.4225 0.0000 0.5000</waypoint>
+        <waypoint>104.1500 7.8778 0.0000 0.5000</waypoint>
+        <waypoint>114.8500 2.4832 0.0000 0.5000</waypoint>
+        <waypoint>118.7500 0.6639 0.0000 0.5000</waypoint>
+        <waypoint>118.8000 0.6569 0.0000 0.5000</waypoint>
+        <waypoint>121.3500 1.9660 0.0000 0.5000</waypoint>
+        <waypoint>134.5000 8.6036 0.0000 0.5000</waypoint>
+        <waypoint>134.6500 8.6649 0.0000 0.5000</waypoint>
+        <waypoint>134.9500 8.5566 0.0000 0.5000</waypoint>
+        <waypoint>135.3500 8.3868 0.0000 0.5000</waypoint>
+        <waypoint>136.5500 7.8102 0.0000 0.5000</waypoint>
+        <waypoint>150.0500 1.0045 0.0000 0.5000</waypoint>
+        <waypoint>150.8000 1.4170 0.0000 0.5000</waypoint>
+        <waypoint>152.1000 2.0851 0.0000 0.5000</waypoint>
+        <waypoint>165.0000 8.5977 0.0000 0.5000</waypoint>
+        <waypoint>165.1500 8.6629 0.0000 0.5000</waypoint>
+        <waypoint>165.3500 8.5987 0.0000 0.5000</waypoint>
+        <waypoint>165.7000 8.4572 0.0000 0.5000</waypoint>
+        <waypoint>166.5500 8.0616 0.0000 0.5000</waypoint>
+        <waypoint>166.6000 8.0700 0.0000 0.5000</waypoint>
+        <waypoint>167.7500 8.6293 0.0000 0.5000</waypoint>
+        <waypoint>167.8500 8.6649 0.0000 0.5000</waypoint>
+        <waypoint>168.2500 8.5216 0.0000 0.5000</waypoint>
+        <waypoint>168.8500 8.2576 0.0000 0.5000</waypoint>
+        <waypoint>169.7000 7.8456 0.0000 0.5000</waypoint>
+        <waypoint>179.9000 2.7026 0.0000 0.5000</waypoint>
+        <waypoint>179.9500 2.7189 0.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_2">
+      <pose>6.6283 2.3333 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.111812</ixx><iyy>1.111812</iyy><izz>0.556957</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.3337533642145506</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.3337533642145506</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 6.6283 2.3333 0.5000</waypoint>
+        <waypoint>0.1500 6.6173 2.3333 0.5000</waypoint>
+        <waypoint>0.3500 6.5766 2.3333 0.5000</waypoint>
+        <waypoint>0.8000 6.4136 2.3333 0.5000</waypoint>
+        <waypoint>1.4000 6.1171 2.3333 0.5000</waypoint>
+        <waypoint>2.2500 5.6407 2.3333 0.5000</waypoint>
+        <waypoint>26.5000 -8.6577 2.3333 0.5000</waypoint>
+        <waypoint>26.5500 -8.6533 2.3333 0.5000</waypoint>
+        <waypoint>26.7000 -8.5855 2.3333 0.5000</waypoint>
+        <waypoint>27.2000 -8.3315 2.3333 0.5000</waypoint>
+        <waypoint>28.7000 -7.4749 2.3333 0.5000</waypoint>
+        <waypoint>56.0500 8.6570 2.3333 0.5000</waypoint>
+        <waypoint>56.1000 8.6583 2.3333 0.5000</waypoint>
+        <waypoint>56.2500 8.5951 2.3333 0.5000</waypoint>
+        <waypoint>56.7500 8.3503 2.3333 0.5000</waypoint>
+        <waypoint>57.3500 8.0204 2.3333 0.5000</waypoint>
+        <waypoint>58.2500 7.5001 2.3333 0.5000</waypoint>
+        <waypoint>85.6500 -8.6608 2.3333 0.5000</waypoint>
+        <waypoint>85.7000 -8.6538 2.3333 0.5000</waypoint>
+        <waypoint>85.8500 -8.5881 2.3333 0.5000</waypoint>
+        <waypoint>86.3500 -8.3383 2.3333 0.5000</waypoint>
+        <waypoint>87.8000 -7.5139 2.3333 0.5000</waypoint>
+        <waypoint>115.1000 8.5948 2.3333 0.5000</waypoint>
+        <waypoint>115.2000 8.6498 2.3333 0.5000</waypoint>
+        <waypoint>115.2500 8.6621 2.3333 0.5000</waypoint>
+        <waypoint>115.6000 8.5027 2.3333 0.5000</waypoint>
+        <waypoint>116.0500 8.2683 2.3333 0.5000</waypoint>
+        <waypoint>117.5500 7.4085 2.3333 0.5000</waypoint>
+        <waypoint>144.8000 -8.6630 2.3333 0.5000</waypoint>
+        <waypoint>145.1000 -8.5367 2.3333 0.5000</waypoint>
+        <waypoint>145.5500 -8.3062 2.3333 0.5000</waypoint>
+        <waypoint>147.0500 -7.4495 2.3333 0.5000</waypoint>
+        <waypoint>174.3500 8.6544 2.3333 0.5000</waypoint>
+        <waypoint>174.4000 8.6580 2.3333 0.5000</waypoint>
+        <waypoint>174.7000 8.5222 2.3333 0.5000</waypoint>
+        <waypoint>175.5500 8.0684 2.3333 0.5000</waypoint>
+        <waypoint>179.9500 5.4867 2.3333 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_3">
+      <pose>1.1508 -4.6667 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.131599</ixx><iyy>1.131599</iyy><izz>0.596530</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.3454071420087575</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.3454071420087575</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 1.1508 -4.6667 0.5000</waypoint>
+        <waypoint>0.1500 1.1360 -4.6667 0.5000</waypoint>
+        <waypoint>0.3000 1.0979 -4.6667 0.5000</waypoint>
+        <waypoint>0.5000 1.0195 -4.6667 0.5000</waypoint>
+        <waypoint>0.7000 0.9181 -4.6667 0.5000</waypoint>
+        <waypoint>1.1500 0.6363 -4.6667 0.5000</waypoint>
+        <waypoint>1.8000 0.1635 -4.6667 0.5000</waypoint>
+        <waypoint>3.4000 -1.0905 -4.6667 0.5000</waypoint>
+        <waypoint>12.9000 -8.6537 -4.6667 0.5000</waypoint>
+        <waypoint>13.1500 -8.5026 -4.6667 0.5000</waypoint>
+        <waypoint>13.6000 -8.1859 -4.6667 0.5000</waypoint>
+        <waypoint>14.9000 -7.1826 -4.6667 0.5000</waypoint>
+        <waypoint>34.7000 8.5948 -4.6667 0.5000</waypoint>
+        <waypoint>34.7500 8.6330 -4.6667 0.5000</waypoint>
+        <waypoint>34.8000 8.6484 -4.6667 0.5000</waypoint>
+        <waypoint>35.1500 8.4150 -4.6667 0.5000</waypoint>
+        <waypoint>35.5500 8.1241 -4.6667 0.5000</waypoint>
+        <waypoint>36.9000 7.0742 -4.6667 0.5000</waypoint>
+        <waypoint>56.6500 -8.6546 -4.6667 0.5000</waypoint>
+        <waypoint>57.0000 -8.4220 -4.6667 0.5000</waypoint>
+        <waypoint>57.4000 -8.1316 -4.6667 0.5000</waypoint>
+        <waypoint>58.7500 -7.0821 -4.6667 0.5000</waypoint>
+        <waypoint>78.5000 8.6511 -4.6667 0.5000</waypoint>
+        <waypoint>78.7500 8.4980 -4.6667 0.5000</waypoint>
+        <waypoint>79.2000 8.1763 -4.6667 0.5000</waypoint>
+        <waypoint>80.5500 7.1296 -4.6667 0.5000</waypoint>
+        <waypoint>100.3500 -8.6447 -4.6667 0.5000</waypoint>
+        <waypoint>100.4000 -8.6358 -4.6667 0.5000</waypoint>
+        <waypoint>100.4500 -8.6040 -4.6667 0.5000</waypoint>
+        <waypoint>100.9500 -8.2573 -4.6667 0.5000</waypoint>
+        <waypoint>102.2500 -7.2561 -4.6667 0.5000</waypoint>
+        <waypoint>122.1500 8.6007 -4.6667 0.5000</waypoint>
+        <waypoint>122.2000 8.6380 -4.6667 0.5000</waypoint>
+        <waypoint>122.2500 8.6421 -4.6667 0.5000</waypoint>
+        <waypoint>122.6000 8.4080 -4.6667 0.5000</waypoint>
+        <waypoint>123.0000 8.1166 -4.6667 0.5000</waypoint>
+        <waypoint>124.2500 7.1454 -4.6667 0.5000</waypoint>
+        <waypoint>144.0000 -8.5928 -4.6667 0.5000</waypoint>
+        <waypoint>144.0500 -8.6310 -4.6667 0.5000</waypoint>
+        <waypoint>144.1000 -8.6484 -4.6667 0.5000</waypoint>
+        <waypoint>144.4500 -8.4150 -4.6667 0.5000</waypoint>
+        <waypoint>144.8500 -8.1241 -4.6667 0.5000</waypoint>
+        <waypoint>146.2000 -7.0742 -4.6667 0.5000</waypoint>
+        <waypoint>165.9500 8.6546 -4.6667 0.5000</waypoint>
+        <waypoint>166.2500 8.4568 -4.6667 0.5000</waypoint>
+        <waypoint>166.6500 8.1689 -4.6667 0.5000</waypoint>
+        <waypoint>167.8500 7.2403 -4.6667 0.5000</waypoint>
+        <waypoint>179.9500 -2.3997 -4.6667 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_4">
+      <pose>-3.3305 0.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.134730</ixx><iyy>1.134730</iyy><izz>0.602793</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.3472155886454574</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.3472155886454574</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 -3.3305 0.0000 0.5000</waypoint>
+        <waypoint>0.2500 -3.3510 0.0000 0.5000</waypoint>
+        <waypoint>0.5000 -3.4014 0.0000 0.5000</waypoint>
+        <waypoint>0.8500 -3.5032 0.0000 0.5000</waypoint>
+        <waypoint>1.2500 -3.6455 0.0000 0.5000</waypoint>
+        <waypoint>2.3500 -4.0926 0.0000 0.5000</waypoint>
+        <waypoint>4.9500 -5.2062 0.0000 0.5000</waypoint>
+        <waypoint>5.8500 -4.7882 0.0000 0.5000</waypoint>
+        <waypoint>7.2000 -4.1976 0.0000 0.5000</waypoint>
+        <waypoint>27.3500 4.4718 0.0000 0.5000</waypoint>
+        <waypoint>27.4000 4.4639 0.0000 0.5000</waypoint>
+        <waypoint>28.8000 3.8434 0.0000 0.5000</waypoint>
+        <waypoint>29.4000 4.1327 0.0000 0.5000</waypoint>
+        <waypoint>30.3000 4.5338 0.0000 0.5000</waypoint>
+        <waypoint>36.3000 7.1188 0.0000 0.5000</waypoint>
+        <waypoint>38.6500 6.0942 0.0000 0.5000</waypoint>
+        <waypoint>57.6500 -2.0796 0.0000 0.5000</waypoint>
+        <waypoint>57.9500 -1.9312 0.0000 0.5000</waypoint>
+        <waypoint>60.1000 -2.8788 0.0000 0.5000</waypoint>
+        <waypoint>69.3000 -6.8372 0.0000 0.5000</waypoint>
+        <waypoint>69.3500 -6.8472 0.0000 0.5000</waypoint>
+        <waypoint>70.0500 -6.5145 0.0000 0.5000</waypoint>
+        <waypoint>71.2000 -6.0078 0.0000 0.5000</waypoint>
+        <waypoint>82.6000 -1.1017 0.0000 0.5000</waypoint>
+        <waypoint>83.0000 -0.8802 0.0000 0.5000</waypoint>
+        <waypoint>83.5500 -0.6114 0.0000 0.5000</waypoint>
+        <waypoint>89.1500 2.2799 0.0000 0.5000</waypoint>
+        <waypoint>101.4500 7.5622 0.0000 0.5000</waypoint>
+        <waypoint>114.8500 1.7982 0.0000 0.5000</waypoint>
+        <waypoint>118.7500 -0.0184 0.0000 0.5000</waypoint>
+        <waypoint>134.1000 -6.6164 0.0000 0.5000</waypoint>
+        <waypoint>134.7500 -6.3050 0.0000 0.5000</waypoint>
+        <waypoint>135.7500 -5.8618 0.0000 0.5000</waypoint>
+        <waypoint>149.8000 0.1852 0.0000 0.5000</waypoint>
+        <waypoint>150.0500 0.3222 0.0000 0.5000</waypoint>
+        <waypoint>150.1000 0.3174 0.0000 0.5000</waypoint>
+        <waypoint>150.3000 0.3964 0.0000 0.5000</waypoint>
+        <waypoint>151.6500 0.9612 0.0000 0.5000</waypoint>
+        <waypoint>166.5500 7.3691 0.0000 0.5000</waypoint>
+        <waypoint>166.6000 7.3602 0.0000 0.5000</waypoint>
+        <waypoint>168.4500 6.5511 0.0000 0.5000</waypoint>
+        <waypoint>179.4500 1.8184 0.0000 0.5000</waypoint>
+        <waypoint>179.5000 1.8173 0.0000 0.5000</waypoint>
+        <waypoint>179.9000 2.0127 0.0000 0.5000</waypoint>
+        <waypoint>179.9500 1.9976 0.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+    <model name="obs_5">
+      <pose>-8.5910 0.0000 0.5000 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>10.0</mass>
+          <inertia><ixx>1.077970</ixx><iyy>1.077970</iyy><izz>0.489273</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia>
+        </inertial>
+        <collision name="collision"><geometry><cylinder><radius>0.3128171120214589</radius><length>1.0</length></cylinder></geometry></collision>
+        <visual name="visual"><geometry><cylinder><radius>0.3128171120214589</radius><length>1.0</length></cylinder></geometry><material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><specular>0.1 0.1 0.1 1</specular></material></visual>
+        <sensor name="sensor_contact" type="contact"><contact><collision>collision</collision></contact></sensor>
+      </link>
+      <plugin filename="gz-sim-touchplugin-system" name="gz::sim::systems::TouchPlugin">
+        <target>robot</target>
+        <namespace>robot</namespace>
+        <time>0.001</time>
+        <enabled>true</enabled>
+      </plugin>
+      <plugin filename="DynaBarnObstacleMover" name="dynabarn2::ObstacleMover">
+        <loop>false</loop>
+        <interpolation>linear</interpolation>
+        <waypoint>0.0000 -8.5910 0.0000 0.5000</waypoint>
+        <waypoint>0.2500 -8.5614 0.0000 0.5000</waypoint>
+        <waypoint>0.5000 -8.4885 0.0000 0.5000</waypoint>
+        <waypoint>0.8500 -8.3409 0.0000 0.5000</waypoint>
+        <waypoint>1.2500 -8.1348 0.0000 0.5000</waypoint>
+        <waypoint>2.3500 -7.4872 0.0000 0.5000</waypoint>
+        <waypoint>4.9500 -5.8740 0.0000 0.5000</waypoint>
+        <waypoint>5.2000 -6.0025 0.0000 0.5000</waypoint>
+        <waypoint>5.8000 -6.3554 0.0000 0.5000</waypoint>
+        <waypoint>9.5000 -8.6489 0.0000 0.5000</waypoint>
+        <waypoint>9.5500 -8.6761 0.0000 0.5000</waypoint>
+        <waypoint>9.6000 -8.6781 0.0000 0.5000</waypoint>
+        <waypoint>9.9500 -8.5044 0.0000 0.5000</waypoint>
+        <waypoint>10.3500 -8.2823 0.0000 0.5000</waypoint>
+        <waypoint>11.6500 -7.4973 0.0000 0.5000</waypoint>
+        <waypoint>28.8000 3.1834 0.0000 0.5000</waypoint>
+        <waypoint>29.5000 2.7795 0.0000 0.5000</waypoint>
+        <waypoint>30.6500 2.0753 0.0000 0.5000</waypoint>
+        <waypoint>47.8500 -8.6411 0.0000 0.5000</waypoint>
+        <waypoint>47.9500 -8.6827 0.0000 0.5000</waypoint>
+        <waypoint>48.6000 -8.3451 0.0000 0.5000</waypoint>
+        <waypoint>49.6000 -7.7496 0.0000 0.5000</waypoint>
+        <waypoint>57.6500 -2.7397 0.0000 0.5000</waypoint>
+        <waypoint>58.3000 -3.1120 0.0000 0.5000</waypoint>
+        <waypoint>59.2500 -3.6908 0.0000 0.5000</waypoint>
+        <waypoint>67.2500 -8.6697 0.0000 0.5000</waypoint>
+        <waypoint>67.3000 -8.6827 0.0000 0.5000</waypoint>
+        <waypoint>67.8000 -8.4288 0.0000 0.5000</waypoint>
+        <waypoint>68.4000 -8.0827 0.0000 0.5000</waypoint>
+        <waypoint>69.3000 -7.5343 0.0000 0.5000</waypoint>
+        <waypoint>69.3500 -7.5177 0.0000 0.5000</waypoint>
+        <waypoint>70.0500 -7.9202 0.0000 0.5000</waypoint>
+        <waypoint>71.2500 -8.6543 0.0000 0.5000</waypoint>
+        <waypoint>71.3000 -8.6803 0.0000 0.5000</waypoint>
+        <waypoint>71.3500 -8.6737 0.0000 0.5000</waypoint>
+        <waypoint>72.0000 -8.3350 0.0000 0.5000</waypoint>
+        <waypoint>73.1000 -7.6777 0.0000 0.5000</waypoint>
+        <waypoint>82.6000 -1.7629 0.0000 0.5000</waypoint>
+        <waypoint>83.0000 -1.5745 0.0000 0.5000</waypoint>
+        <waypoint>83.5500 -1.2714 0.0000 0.5000</waypoint>
+        <waypoint>89.1500 1.6199 0.0000 0.5000</waypoint>
+        <waypoint>89.8500 1.2050 0.0000 0.5000</waypoint>
+        <waypoint>91.0000 0.4965 0.0000 0.5000</waypoint>
+        <waypoint>105.7500 -8.6849 0.0000 0.5000</waypoint>
+        <waypoint>105.9500 -8.5999 0.0000 0.5000</waypoint>
+        <waypoint>106.3500 -8.3911 0.0000 0.5000</waypoint>
+        <waypoint>107.4500 -7.7412 0.0000 0.5000</waypoint>
+        <waypoint>118.7500 -0.7061 0.0000 0.5000</waypoint>
+        <waypoint>118.8000 -0.7018 0.0000 0.5000</waypoint>
+        <waypoint>120.5000 -1.7377 0.0000 0.5000</waypoint>
+        <waypoint>131.6500 -8.6790 0.0000 0.5000</waypoint>
+        <waypoint>131.7000 -8.6736 0.0000 0.5000</waypoint>
+        <waypoint>131.8500 -8.6020 0.0000 0.5000</waypoint>
+        <waypoint>132.4000 -8.3052 0.0000 0.5000</waypoint>
+        <waypoint>134.1000 -7.2764 0.0000 0.5000</waypoint>
+        <waypoint>134.8500 -7.7083 0.0000 0.5000</waypoint>
+        <waypoint>136.4500 -8.6851 0.0000 0.5000</waypoint>
+        <waypoint>136.6500 -8.5973 0.0000 0.5000</waypoint>
+        <waypoint>137.0500 -8.3850 0.0000 0.5000</waypoint>
+        <waypoint>138.0000 -7.8238 0.0000 0.5000</waypoint>
+        <waypoint>149.8000 -0.4784 0.0000 0.5000</waypoint>
+        <waypoint>150.0500 -0.3630 0.0000 0.5000</waypoint>
+        <waypoint>150.1000 -0.3617 0.0000 0.5000</waypoint>
+        <waypoint>150.8000 -0.7747 0.0000 0.5000</waypoint>
+        <waypoint>151.9500 -1.4825 0.0000 0.5000</waypoint>
+        <waypoint>163.4500 -8.6472 0.0000 0.5000</waypoint>
+        <waypoint>163.5000 -8.6743 0.0000 0.5000</waypoint>
+        <waypoint>163.5500 -8.6781 0.0000 0.5000</waypoint>
+        <waypoint>163.9000 -8.5044 0.0000 0.5000</waypoint>
+        <waypoint>164.3000 -8.2823 0.0000 0.5000</waypoint>
+        <waypoint>165.5000 -7.5590 0.0000 0.5000</waypoint>
+        <waypoint>179.4500 1.1303 0.0000 0.5000</waypoint>
+        <waypoint>179.5000 1.1362 0.0000 0.5000</waypoint>
+        <waypoint>179.9500 0.8811 0.0000 0.5000</waypoint>
+      </plugin>
+    </model>
+  </world>
+</sdf>
