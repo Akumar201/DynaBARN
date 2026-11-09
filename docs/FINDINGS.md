@@ -292,3 +292,26 @@ Predictions, by BARN score with worlds as the unit and 95% bootstrap intervals (
 2. Yield: mppi_critic is worse than both MPPI and RPP (interval below zero).
 3. The critic's gain over MPPI is larger under block than under yield (interval of the difference above zero).
 Any prediction that fails is reported as failed.
+
+### 5d results (2026-11-08, 710 of 720 trials; one block and nine yield trials missing, 10 no_start excluded)
+
+BARN score, mppi_critic minus baseline, worlds as unit, 95% bootstrap:
+
+| Mode | vs MPPI | vs RPP |
+| --- | --- | --- |
+| Block | +0.002 (-0.037 to +0.037) | +0.016 (-0.009 to +0.043) |
+| Yield | -0.050 (-0.097 to -0.006) | -0.023 (-0.073 to +0.031) |
+
+Block gain minus yield gain (vs MPPI): +0.052 (-0.002 to +0.107).
+
+1. Block, beats both: **failed.** No detectable gain over either baseline.
+2. Yield, worse than both: **failed as stated.** Worse than MPPI (interval below zero), not distinguishable from RPP.
+3. Larger gain under block than yield: **failed narrowly** (interval touches zero); direction as predicted.
+
+Success, block: MPPI 0.31, critic 0.35 (+0.04, -0.05 to +0.13); yield: MPPI 0.72, critic 0.74.
+The critic is still slower (median success 25.1 s vs 20.5 s under yield), which drives the yield score loss.
+
+Caveat on comparability: under block, MPPI succeeds 0.31 on held-out worlds against 0.09 on the original 60, so the
+held-out worlds may be easier under block, or the block effect differs between world sets. A fixed-motion run on the
+held-out worlds is needed to tell. Either way, the section 5c block advantage did not replicate, and the reversal
+cannot be claimed. What survives on both world sets: the critic loses score to MPPI under yield, mainly through time.
