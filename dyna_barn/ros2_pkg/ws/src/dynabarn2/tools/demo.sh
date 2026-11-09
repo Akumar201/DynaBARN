@@ -4,9 +4,10 @@
 #   default: demo.sh dynabarn2/world_13 block mppi mppi_critic
 # Good picks (critic succeeds 3/3, plain MPPI collides 3/3):
 #   block: dynabarn2/world_13 16 19 26 31 38 48     fixed: world_0 3 29 38 48     yield: world_3 12 29
+# SYNC_START=false shows the old timing bug: obstacles start before the robot, so runs differ.
 # Each trial prints its result line (status, time, score) when it ends. Ctrl-C stops both.
 set -u
-WORLD=${1:-dynabarn2/world_13}; REACTIVE=${2:-block}; LEFT=${3:-mppi}; RIGHT=${4:-mppi_critic}
+SYNC=${SYNC_START:-true}; WORLD=${1:-dynabarn2/world_13}; REACTIVE=${2:-block}; LEFT=${3:-mppi}; RIGHT=${4:-mppi_critic}
 ROS2_PKG=$(cd "$(dirname "$0")/../../../.." && pwd)
 OUT=/ws/src/dynabarn2/results/demo; mkdir -p "$ROS2_PKG/ws/src/dynabarn2/results/demo"
 xhost +local: > /dev/null
@@ -19,9 +20,9 @@ run() {  # planner slot
     source /ws/install/setup.bash
     f=$OUT/\$(echo $WORLD | tr / _)_${REACTIVE}_$1.csv; rm -f \$f
     ros2 launch dynabarn2 run_trial.launch.py world_file:=$WORLD planner:=$1 reactive:=$REACTIVE \
-      sync_start:=true gui:=true out_file:=\$f > /dev/null 2>&1
+      sync_start:=$SYNC gui:=true out_file:=\$f > /dev/null 2>&1
     echo \"[$1] \$(tail -1 \$f)\""
 }
 trap 'docker kill dynabarn_demo_1 dynabarn_demo_2 > /dev/null 2>&1' INT TERM
-echo "World $WORLD, obstacles $REACTIVE: left window $LEFT, right window $RIGHT (opens second)"
+echo "World $WORLD, obstacles $REACTIVE: left window $LEFT, right window $RIGHT (opens second), sync_start=$SYNC"
 run "$LEFT" 1 & sleep 5; run "$RIGHT" 2 & wait   # right window opens second; drag them apart
