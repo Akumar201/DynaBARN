@@ -315,3 +315,14 @@ Caveat on comparability: under block, MPPI succeeds 0.31 on held-out worlds agai
 held-out worlds may be easier under block, or the block effect differs between world sets. A fixed-motion run on the
 held-out worlds is needed to tell. Either way, the section 5c block advantage did not replicate, and the reversal
 cannot be claimed. What survives on both world sets: the critic loses score to MPPI under yield, mainly through time.
+
+### 5d follow-up: fixed motion on the held-out worlds (2026-11-09, 357 of 360 trials)
+
+Success / BARN score: MPPI 0.42 / 0.203, RPP 0.42 / 0.199, mppi_critic 0.52 / 0.215.
+Critic score minus MPPI +0.004 (-0.040 to +0.048), minus RPP +0.008 (-0.031 to +0.051): tied, as on the original set.
+The critic's success edge on fixed motion (+0.10) repeats on both world sets; its score does not, because it is slower.
+
+Why block looked easy on held-out worlds: they are only slightly easier with fixed motion (MPPI 0.42 vs 0.37), but block
+costs much less there. Block minus fixed success, MPPI: original -0.28 (-0.38 to -0.18), held-out -0.12 (-0.20 to -0.04);
+RPP: -0.26 vs -0.14. So the size of the block effect depends on the world set, which is itself worth reporting: reactive
+difficulty is not predictable from fixed-motion difficulty. Which world features drive it is not yet known.
