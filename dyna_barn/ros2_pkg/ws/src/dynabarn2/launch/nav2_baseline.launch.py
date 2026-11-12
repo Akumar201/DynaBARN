@@ -3,6 +3,7 @@
 Mapless: the planner and both costmaps work in the odom frame from the lidar alone, as the
 challenge gives no map. Only what differs from Clearpath's nav2.yaml is set here.
 """
+import json
 import os
 import tempfile
 
@@ -121,6 +122,8 @@ def build_params(planner):
         if planner == 'mppi_critic':
             mppi['critics'] = mppi['critics'] + ['PredictionCritic']
             mppi['PredictionCritic'] = {'enabled': True}
+            # For tuning: JSON overrides, e.g. CRITIC_PARAMS='{"collision_cost": 500.0}'
+            mppi['PredictionCritic'].update(json.loads(os.environ.get('CRITIC_PARAMS') or '{}'))
     return params
 
 
