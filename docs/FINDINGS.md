@@ -365,3 +365,19 @@ Runs: synced start, MPPI and RPP, fixed and block (1.0 m/s), 2 repeats. Success 
    `blind_collision`'s.
 2. Block-safe worlds: mean block success at least 0.80. Other worlds: at most 0.20.
 3. Set block success within 0.08 of the predicted 0.228 (stratum means 0.944 / 0.067 from sections 5d-5e).
+
+### 5f results (2026-11-12, 240 block + 240 fixed trials)
+
+`tools/check_confirm.py`. All three predictions pass.
+
+1. Spearman `hit_block_1.0` vs block success **-0.84** (95% CI -0.97 to -0.69); `blind_collision` -0.53. PASS.
+2. Block-safe worlds **0.95** (n=11), others **0.05** (n=49). PASS.
+3. Set block success **0.212** vs predicted 0.228 +/- 0.08. PASS.
+
+Not pre-registered: fixed 0.444, block 0.212, drop -0.232. `hit_fixed_1.0` vs fixed success -0.44
+(`blind_collision` -0.42).
+
+Conclusion: under the synchronised start, whether a straight-line robot is caught by blocking obstacles
+(`hit_block_1.0`, computed from the world file alone) predicts block success across three independent world sets.
+The 5d "reversal not confirmed" result and the different block drops are explained by how many block-safe worlds
+each set happens to contain (4, 14, 11 of 60). Caveat: block-safe worlds are also easy with fixed motion.
