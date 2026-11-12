@@ -326,3 +326,42 @@ Why block looked easy on held-out worlds: they are only slightly easier with fix
 costs much less there. Block minus fixed success, MPPI: original -0.28 (-0.38 to -0.18), held-out -0.12 (-0.20 to -0.04);
 RPP: -0.26 vs -0.14. So the size of the block effect depends on the world set, which is itself worth reporting: reactive
 difficulty is not predictable from fixed-motion difficulty. Which world features drive it is not yet known.
+
+## 5e. What makes blocking obstacles hard (2026-11-12)
+
+**Not the software.** MPPI under block on the original 60 worlds, rerun today: 0.09 success (55 trials) against 0.10 in
+the original run. Regenerating the original worlds with today's generator reproduces them byte for byte.
+
+**Not the manifest features.** Both sets have near-identical manifest statistics (obstacle counts, speeds,
+blind_collision, earliest arrival, family and level mix). Features that track the block drop in one set track it the
+other way in the other set. The held-out set's smaller drop shows in every level and most families.
+
+**The manifest metrics describe the wrong start.** `blind_collision` averages over 40 robot departure times. With the
+synchronised start the robot always meets the obstacles at trajectory time 0. `tools/sync_features.py` replays each
+world from time 0 against a straight-line robot, with obstacles fixed, yielding or blocking (ObstacleMover's rule).
+
+Spearman with per-world success (MPPI and RPP averaged), original | held-out | pooled (95% CI over worlds):
+
+| Feature | Fixed success | Block success | Block drop (worlds with fixed > 0) |
+| --- | --- | --- | --- |
+| blind_collision (manifest) | -0.36 / -0.59 / -0.47 | -0.12 / -0.63 / -0.41 (-0.56 to -0.24) | +0.12 / -0.45 / -0.19 |
+| hit_fixed_1.0 (synced, fixed) | -0.57 / -0.68 / -0.63 | -0.39 / -0.77 / -0.63 | +0.07 / -0.63 / -0.34 |
+| hit_block_1.0 (synced, block) | -0.30 / -0.70 / -0.53 | **-0.48 / -0.85 / -0.75 (-0.86 to -0.58)** | **-0.45 / -0.77 / -0.68 (-0.81 to -0.52)** |
+
+`hit_block_1.0` = a robot driving straight at 1 m/s from time 0 is hit when obstacles block. It explains the gap
+between the sets: 4/60 original worlds are block-safe (not hit) against 14/60 held-out worlds; block-safe worlds
+succeed 0.94 under block, the rest 0.07. Predicted set block success from these two means: 0.125 original (actual
+0.106), 0.272 held-out (actual 0.292). Within non-safe worlds a smaller gap remains (drop -0.28 vs -0.17).
+Caveat: block-safe worlds are also easy with fixed motion (0.96); the metric mainly separates trivially open worlds.
+Found after looking at the data, so it is confirmed below on a third world set.
+
+### 5f. Pre-registered confirmation (written 2026-11-12, before any trial)
+
+World set `worlds/dynabarn2_confirm` (generator seed 2028, 60 worlds, never run). `hit_block_1.0` computed before
+running (`worlds/dynabarn2_confirm/sync_features.csv`): 11 block-safe worlds.
+Runs: synced start, MPPI and RPP, fixed and block (1.0 m/s), 2 repeats. Success averaged over MPPI and RPP per world.
+
+1. Spearman of `hit_block_1.0` with block success is negative, 95% interval below zero, and more negative than
+   `blind_collision`'s.
+2. Block-safe worlds: mean block success at least 0.80. Other worlds: at most 0.20.
+3. Set block success within 0.08 of the predicted 0.228 (stratum means 0.944 / 0.067 from sections 5d-5e).
