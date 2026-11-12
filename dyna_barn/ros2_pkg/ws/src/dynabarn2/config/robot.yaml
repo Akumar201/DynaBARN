@@ -15,6 +15,23 @@ platform:
     - name: rear_fender
       type: j100.fender
       rpy: [0.0, 0.0, 3.1415]
+  extras:
+    ros_parameters:
+      # Clearpath's default EKF fuses the wheel odometry's absolute yaw, so heading errors from
+      # skid-steer slip in sharp turns are never corrected (up to 0.12 rad, ending 1.5-1.8 m off
+      # the goal laterally). Fuse wheel velocities only and take yaw rate from the IMU gyro.
+      # Overriding ekf_node replaces Clearpath's IMU block, so it is restated in full here.
+      ekf_node:
+        odom0_config: [false, false, false, false, false, false,
+                       true, true, false, false, false, false,
+                       false, false, false]
+        imu0: sensors/imu_0/data
+        imu0_config: [false, false, false, false, false, false,
+                      false, false, false, false, false, true,
+                      false, false, false]
+        imu0_differential: false
+        imu0_queue_size: 10
+        imu0_remove_gravitational_acceleration: true
 mounts:
   bracket:
     - parent: front_0_mount
