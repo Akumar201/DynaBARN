@@ -366,7 +366,7 @@ Runs: synced start, MPPI and RPP, fixed and block (1.0 m/s), 2 repeats. Success 
 2. Block-safe worlds: mean block success at least 0.80. Other worlds: at most 0.20.
 3. Set block success within 0.08 of the predicted 0.228 (stratum means 0.944 / 0.067 from sections 5d-5e).
 
-### 5f results (2026-11-12, 240 block + 240 fixed trials)
+### 5f results (2026-11-12, 240 block + 240 fixed trials; 5 and 2 no_start excluded)
 
 `tools/check_confirm.py`. All three predictions pass.
 
