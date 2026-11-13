@@ -437,3 +437,20 @@ pre-registered.
 
 Section 5f still holds after the fix (confirm set, block, MPPI + RPP): Spearman of `hit_block_1.0` with block
 success -0.90; block-safe worlds 1.00 (n=11), others 0.04 (n=49); set 0.217 (predicted 0.228).
+
+## 5h. Does knowing how obstacles react help? (2026-11-12, exploratory)
+
+`PredictionCritic` got an optional reaction model (`reaction_gain`): within 2.5 m, predicted obstacles also move
+toward (block) or away from (yield) the robot's position on each sampled trajectory, with ObstacleMover's own rule
+and constants. With matching values this is an oracle of the reaction. Original worlds, synced start, 1 repeat;
+paired world-level bootstrap, 95% CI, reaction model on minus off:
+
+| Mode | Gain | Success | Score |
+|---|---|---|---|
+| block | -1.0 (vs off, same batch) | +0.017 (-0.085 to +0.119) | -0.002 (-0.038 to +0.031) |
+| yield | +1.0 (vs off from `fix_yield`, other batch) | +0.025 (-0.051 to +0.102) | +0.030 (+0.006 to +0.054) |
+
+Block: no measurable gain even from an oracle of the reaction; hard worlds stayed at 0/20 either way. Together with
+section 5f (worlds where a straight-line robot gets caught are ~4% solvable), this says block difficulty is set by
+the world's geometry and timing, not by poor prediction. Yield: a small score gain, from a cross-batch comparison,
+so weaker evidence. Not pre-registered.
