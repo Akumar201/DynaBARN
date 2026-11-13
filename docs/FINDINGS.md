@@ -420,3 +420,20 @@ All results before this section carry the drift; conclusions that depend on smal
 | B collision_cost 300 | 0.62 | 0.225 | 0.10 |
 | C B + discount 0.9 | 0.66 | 0.242 | 0.16 |
 | D B + margin 0.25 | 0.59 | 0.233 | 0.10 |
+
+**Rechecks after the fix (2026-11-12, synced start, 1-2 repeats).** Paired world-level bootstrap, 95% CI,
+prediction critic minus MPPI:
+
+| World set, mode | Success | Score |
+|---|---|---|
+| held-out (seed 2027), fixed, 2 repeats | **+0.133** (+0.008 to +0.267) | +0.009 (-0.043 to +0.060) |
+| confirm (seed 2028), block, 1 repeat | **+0.158** (+0.035 to +0.281) | +0.041 (-0.006 to +0.087) |
+| original, yield, 2 repeats | +0.092 (-0.017 to +0.200) | -0.047 (-0.094 to +0.003) |
+
+Held-out fixed, hard worlds: critic 0.24, MPPI 0.15, RPP 0.12 (before the fix 0.09 / 0.13 / 0.17).
+So after the fix the critic reliably succeeds more often on unseen worlds, including under blocking; on score it
+ties (fixed), is marginally ahead (block) or behind (yield), because it is slower. These comparisons were not
+pre-registered.
+
+Section 5f still holds after the fix (confirm set, block, MPPI + RPP): Spearman of `hit_block_1.0` with block
+success -0.90; block-safe worlds 1.00 (n=11), others 0.04 (n=49); set 0.217 (predicted 0.228).
