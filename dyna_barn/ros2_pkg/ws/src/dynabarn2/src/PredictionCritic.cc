@@ -4,6 +4,12 @@
 // step k with where each tracked obstacle will be k steps from now, assuming constant velocity, so a
 // gap that will have closed by the time the robot gets there costs more than one that has not.
 //
+// Optional reaction model (reaction_gain != 0): within reaction_radius each obstacle also moves along
+// the line to the robot's position on that trajectory, at reaction_gain * (1 - d / reaction_radius)
+// m/s (negative gain: towards the robot, as blocking obstacles do; positive: away, as yielding ones
+// do), drifting back over reaction_recovery s and at most reaction_max_offset m off its path. This is
+// the rule DynaBARN II's ObstacleMover uses, so with matching values it is an oracle of the reaction.
+//
 // Tracks come from obstacle_predictor on /predicted_tracks as [stamp, x, y, vx, vy, x, y, vx, vy, ...]
 // in the costmap's frame.
 
@@ -33,6 +39,10 @@ public:
     getParam(margin_, "margin", 0.5f);              // extra clearance that is preferred
     getParam(max_age_, "max_age", 0.5f);            // s, older tracks are ignored
     getParam(discount_, "discount", 0.98f);         // per step, as predictions weaken with time
+    getParam(reaction_gain_, "reaction_gain", 0.0f);              // m/s, 0 disables the reaction model
+    getParam(reaction_radius_, "reaction_radius", 2.5f);
+    getParam(reaction_recovery_, "reaction_recovery", 2.0f);      // s
+    getParam(reaction_max_offset_, "reaction_max_offset", 2.0f);  // m
 
     auto node = parent_.lock();
     clock_ = node->get_clock();
@@ -69,22 +79,49 @@ public:
     const float soft = hit_radius_ + margin_;
     constexpr size_t kStride = 2;
 
+    const size_t n_tracks = (tracks.size() - 1) / 4;
+    const bool react = reaction_gain_ != 0.0f;
+    const float dt = data.model_dt;
+    std::vector<float> ox(n_tracks), oy(n_tracks);
+
     for (size_t i = 0; i < batch; ++i) {
       float cost = 0.0f;
       bool hit = false;
       float weight = 1.0f;
-      for (size_t k = 0; k < steps; k += kStride) {
-        const float t = age + static_cast<float>(k) * data.model_dt;
-        for (size_t n = 1; n + 3 < tracks.size(); n += 4) {
-          const float dx = x(i, k) - static_cast<float>(tracks[n] + tracks[n + 2] * t);
-          const float dy = y(i, k) - static_cast<float>(tracks[n + 1] + tracks[n + 3] * t);
+      std::fill(ox.begin(), ox.end(), 0.0f);
+      std::fill(oy.begin(), oy.end(), 0.0f);
+      for (size_t k = 0; k < steps; ++k) {
+        const float t = age + static_cast<float>(k) * dt;
+        const bool scored = k % kStride == 0;
+        for (size_t j = 0; j < n_tracks; ++j) {
+          const size_t n = 1 + 4 * j;
+          const float dx = x(i, k) - (static_cast<float>(tracks[n] + tracks[n + 2] * t) + ox[j]);
+          const float dy = y(i, k) - (static_cast<float>(tracks[n + 1] + tracks[n + 3] * t) + oy[j]);
           const float distance = std::sqrt(dx * dx + dy * dy);
-          if (distance < soft) {
+          if (scored && distance < soft) {
             hit = hit || distance < hit_radius_;
             cost += weight * (soft - distance) / margin_;
           }
+          if (react) {
+            // dx, dy point from the obstacle to the robot; the obstacle moves along -(dx, dy) * gain.
+            float rx = -ox[j] / reaction_recovery_, ry = -oy[j] / reaction_recovery_;
+            if (distance > 1e-3f && distance < reaction_radius_) {
+              const float s = -reaction_gain_ * (1.0f - distance / reaction_radius_) / distance;
+              rx += s * dx;
+              ry += s * dy;
+            }
+            ox[j] += rx * dt;
+            oy[j] += ry * dt;
+            const float norm = std::sqrt(ox[j] * ox[j] + oy[j] * oy[j]);
+            if (norm > reaction_max_offset_) {
+              ox[j] *= reaction_max_offset_ / norm;
+              oy[j] *= reaction_max_offset_ / norm;
+            }
+          }
         }
-        weight *= discount_;
+        if (scored) {
+          weight *= discount_;
+        }
       }
       data.costs[i] += weight_ * cost + (hit ? collision_cost_ : 0.0f);
     }
@@ -93,6 +130,7 @@ public:
 private:
   float weight_{60.0f}, collision_cost_{2000.0f}, hit_radius_{0.75f}, margin_{0.5f};
   float max_age_{0.5f}, discount_{0.98f};
+  float reaction_gain_{0.0f}, reaction_radius_{2.5f}, reaction_recovery_{2.0f}, reaction_max_offset_{2.0f};
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_;
   std::mutex mutex_;
