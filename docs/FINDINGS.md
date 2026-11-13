@@ -381,3 +381,42 @@ Conclusion: under the synchronised start, whether a straight-line robot is caugh
 (`hit_block_1.0`, computed from the world file alone) predicts block success across three independent world sets.
 The 5d "reversal not confirmed" result and the different block drops are explained by how many block-safe worlds
 each set happens to contain (4, 14, 11 of 60). Caveat: block-safe worlds are also easy with fixed motion.
+
+## 5g. Odometry drift fixed (2026-11-12)
+
+**Cause.** Clearpath's J100 EKF fused the wheel odometry's absolute yaw and only the IMU's yaw rate, so
+skid-steer slip in sharp turns left a permanent heading error (up to 0.12 rad). Over the remaining ~10 m it put
+the robot 1.5-1.8 m beside the goal while Nav2 believed it had arrived: every one of 80 "stalls" (timeouts within
+3 m of the goal) across all result files was lateral (mean |y| 1.53 m), never short of the goal. Reproduced on
+dynabarn2/world_26 (yield, RPP) with 6 trials in parallel; one stalled 1.74 m to the side.
+
+**Fix** (`config/robot.yaml`, `platform.extras.ros_parameters.ekf_node`): fuse wheel vx, vy only and the IMU yaw
+rate. Same world and load: 6/6 succeed, heading error under 0.005 rad (wheels alone: up to 0.11 rad).
+Note: overriding `ekf_node` replaces Clearpath's IMU block, so the IMU topic must be restated (a first attempt
+without it left the EKF with no yaw input at all).
+
+**Effect, original worlds, synced start** (before: sections 5b-5c, 2-3 repeats; after: 1-2 repeats, run with
+another batch in parallel):
+
+| Mode | Planner | Success before | after | Score before | after |
+|---|---|---|---|---|---|
+| fixed | MPPI | 0.37 | 0.45 | 0.170 | 0.209 |
+| fixed | RPP | 0.38 | 0.44 | 0.180 | 0.209 |
+| fixed | MPPI + PredictionCritic | 0.48 | **0.69** | 0.183 | **0.252** |
+| yield | MPPI | 0.74 | 0.78 | 0.328 | 0.350 |
+| yield | RPP | 0.68 | 0.77 | 0.322 | 0.363 |
+| yield | MPPI + PredictionCritic | 0.71 | **0.88** | 0.263 | 0.306 |
+
+Yield stalls: 25 -> 0. The prediction planner gains most. Likely reason (not tested directly): its tracker works in
+the odom frame, so a heading error rotates every lidar point and makes static obstacles look like they move.
+After the fix the critic beats MPPI on score in fixed mode (+0.043), where before it only tied.
+All results before this section carry the drift; conclusions that depend on small differences must be rechecked.
+
+**Critic tuning (original worlds, fixed, 1 repeat).** Defaults stay: none of the variants helped.
+
+| Variant | Success | Score | Hard success |
+|---|---|---|---|
+| A defaults (collision_cost 2000, discount 0.98, margin 0.5) | 0.69 | 0.252 | 0.26 |
+| B collision_cost 300 | 0.62 | 0.225 | 0.10 |
+| C B + discount 0.9 | 0.66 | 0.242 | 0.16 |
+| D B + margin 0.25 | 0.59 | 0.233 | 0.10 |
