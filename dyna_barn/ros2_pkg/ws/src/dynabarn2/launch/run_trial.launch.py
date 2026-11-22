@@ -20,8 +20,9 @@ ARGUMENTS = [
     DeclareLaunchArgument('world_file', default_value='dynabarn/world_0',
                           description='World under share/dynabarn2/worlds, without .sdf'),
     DeclareLaunchArgument('gui', default_value='false', choices=['true', 'false']),
-    DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'mppi_pred', 'mppi_critic', 'dwb', 'rpp', 'none'],
-                          description='Baseline Nav2 controller; none leaves the robot to you'),
+    DeclareLaunchArgument('planner', default_value='mppi', choices=['mppi', 'mppi_pred', 'mppi_critic', 'dwb', 'rpp', 'learned', 'none'],
+                          description='Baseline Nav2 controller, learned (RL policy; see LEARNED_* '
+                                      'environment variables) or none to leave the robot to you'),
     DeclareLaunchArgument('nav_log_level', default_value='warn'),
     DeclareLaunchArgument('out_file', default_value='results.csv'),
     DeclareLaunchArgument('reactive', default_value='off', choices=['off', 'yield', 'block'],
@@ -79,6 +80,16 @@ def navigation(context):
     planner = LaunchConfiguration('planner').perform(context)
     if planner == 'none':
         return []
+    if planner == 'learned':
+        # The policy drives the robot directly from lidar and odometry, without Nav2.
+        get = lambda name: LaunchConfiguration(name).perform(context)  # noqa: E731
+        return [Node(
+            package='dynabarn2', executable='learned_policy.py', output='screen',
+            parameters=[{'policy_file': os.environ.get('LEARNED_POLICY', ''),
+                         'mode': os.environ.get('LEARNED_MODE', 'eval'),
+                         'episode_dir': os.environ.get('LEARNED_EPISODE_DIR', ''),
+                         'world': get('world_file'), 'reactive': get('reactive'),
+                         **{name: float(get(name)) for name in ('x', 'y', 'yaw', 'goal_x', 'goal_y')}}])]
     # Give the robot's bringup time to come up before Nav2 starts.
     return [TimerAction(period=15.0, actions=[
         LogInfo(msg=f'Starting Nav2 baseline: {planner}'),

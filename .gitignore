@@ -30,3 +30,7 @@ dyna_barn/ros2_pkg/ws/src/DynaBARN/worlds/
 
 # Per-trial baseline files (merged results/<tag>.csv is what gets committed)
 dyna_barn/ros2_pkg/ws/src/dynabarn2/results/*/
+
+# Training worlds for the learned planner: 87 MB, regenerated exactly from their seed with
+#   python3 -m dynabarn2_worlds.generate_dynabarn2 --save_dir worlds/dynabarn2_train --seed 2030 --per_cell 20
+dyna_barn/ros2_pkg/ws/src/dynabarn2/worlds/dynabarn2_train/

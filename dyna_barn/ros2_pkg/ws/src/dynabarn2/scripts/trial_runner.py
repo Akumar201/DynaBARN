@@ -58,7 +58,7 @@ class TrialRunner(Node):
         self.t_start = None    # sim time at which the robot started moving
         self.finished = False
         self.nav = None
-        if p('send_goal') and p('planner') != 'none':
+        if p('send_goal') and p('planner') not in ('none', 'learned'):
             self.nav = ActionClient(self, NavigateToPose, 'navigate_to_pose')
         self.goal_sent = False
         self.t_last_try = -1.0

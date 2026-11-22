@@ -48,9 +48,11 @@ install(PROGRAMS
   scripts/convert_dynabarn_classic.py
   scripts/trial_runner.py
   scripts/obstacle_predictor.py
+  scripts/learned_policy.py
   DESTINATION lib/${PROJECT_NAME}
 )
 ament_python_install_package(dynabarn2_worlds)
+ament_python_install_package(dynabarn2_learned)
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/hooks/${PROJECT_NAME}.dsv.in")
 
