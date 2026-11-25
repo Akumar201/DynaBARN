@@ -131,6 +131,8 @@ def main():
     ap.add_argument('--lr', type=float, default=3e-4)
     ap.add_argument('--frame_stride', type=int, default=1, help='must match the actors\' FRAME_STRIDE')
     ap.add_argument('--gamma', type=float, default=0.99)
+    ap.add_argument('--grad_clip', type=float, default=10.0, help='max gradient norm, 0 = off (run 1 had none)')
+    ap.add_argument('--q_clip', type=float, default=50.0, help='clamp critic targets to +-this, 0 = off (run 1 had none)')
     ap.add_argument('--tau', type=float, default=0.005)
     ap.add_argument('--replay', type=int, default=2_000_000)
     ap.add_argument('--warmup', type=int, default=20_000, help='transitions before training starts')
@@ -231,6 +233,10 @@ def main():
 
     budget = 0.0
     last_scan = 0.0
+    def clip(net):
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(net.parameters(), args.grad_clip)
+
     while updates < args.max_updates and not os.path.exists(os.path.join(run, 'STOP')):
         if time.time() - last_scan > 10.0 or budget < 1:
             budget += args.utd * ingest()
@@ -244,14 +250,16 @@ def main():
             a2, logp2 = actor(nxt)
             q1t, q2t = target(nxt, a2)
             y = rew + args.gamma * (1 - done) * (torch.min(q1t, q2t) - alpha * logp2)
+            if args.q_clip > 0:   # returns are bounded (about +-30), so larger targets only feed a blow-up
+                y = y.clamp(-args.q_clip, args.q_clip)
         q1, q2 = critic(obs, act)
         loss_c = F.mse_loss(q1, y) + F.mse_loss(q2, y)
-        opt_c.zero_grad(); loss_c.backward(); opt_c.step()
+        opt_c.zero_grad(); loss_c.backward(); clip(critic); opt_c.step()
 
         a, logp = actor(obs)
         q1p, q2p = critic(obs, a)
         loss_a = (alpha * logp - torch.min(q1p, q2p)).mean()
-        opt_a.zero_grad(); loss_a.backward(); opt_a.step()
+        opt_a.zero_grad(); loss_a.backward(); clip(actor); opt_a.step()
 
         loss_al = -(log_alpha * (logp.detach() + target_entropy)).mean()
         opt_al.zero_grad(); loss_al.backward(); opt_al.step()
