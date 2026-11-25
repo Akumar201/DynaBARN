@@ -486,3 +486,28 @@ held-out fixed (`fix_holdout_fixed`, 2 repeats) and confirmation block (`fix_con
 success and score against MPPI, RPP and the critic with the paired world-level bootstrap. Expectation from the
 development set: the learned planner is below the critic on both, and at or below MPPI on success and below it
 on score (it is slower). No further snapshot or setting will be tried on these sets.
+
+### 5i results (2026-11-24, v600, 120 held-out fixed + 60 confirm block trials, no no_start)
+
+Paired world-level bootstrap, 95% CI, learned minus planner:
+
+| Test set | Planner | Success | Learned − planner, success | Learned − planner, score |
+|---|---|---|---|---|
+| held-out fixed | learned | 0.417 | | |
+| | MPPI | 0.467 | -0.050 (-0.175 to +0.083) | -0.067 (-0.126 to -0.009) |
+| | RPP | 0.458 | -0.042 (-0.158 to +0.083) | -0.068 (-0.124 to -0.011) |
+| | critic | 0.600 | -0.183 (-0.300 to -0.067) | -0.077 (-0.127 to -0.028) |
+| confirm block | learned | 0.350 | | |
+| | MPPI (57 worlds) | 0.228 | +0.123 (-0.018 to +0.263) | +0.017 (-0.040 to +0.073) |
+| | RPP | 0.217 | +0.133 (+0.000 to +0.267) | +0.019 (-0.036 to +0.072) |
+| | critic | 0.383 | -0.033 (-0.167 to +0.083) | -0.025 (-0.073 to +0.021) |
+
+As expected: below the critic on held-out fixed, and on score below MPPI/RPP there (slower). Not expected: under
+block it is level with the critic and ahead of MPPI/RPP on success (borderline), with scores tied.
+
+Split by the section 5e metric (confirm block, success): learned 0.64 on block-safe worlds (n=11) and 0.29 on
+the rest (n=49); critic 0.82 / 0.29; MPPI 1.00 / 0.04; RPP 1.00 / 0.04. So "caught" worlds are not unsolvable:
+both motion-aware planners (prediction critic, learned policy) get through about 29% of them, while path followers
+almost never do. This refines 5e/5h: the geometry sets a hard floor for planners that do not reason about motion,
+and the remaining gap is shared by two very different motion-aware planners. The learned policy is the less
+reliable on easy worlds (0.64 vs 1.00 on block-safe ones). Exploratory split, not pre-registered.
