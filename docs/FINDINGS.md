@@ -454,3 +454,35 @@ Block: no measurable gain even from an oracle of the reaction; hard worlds staye
 section 5f (worlds where a straight-line robot gets caught are ~4% solvable), this says block difficulty is set by
 the world's geometry and timing, not by poor prediction. Yield: a small score gain, from a cross-batch comparison,
 so weaker evidence. Not pre-registered.
+
+## 5i. Learned planner (RL), first run (2026-11-24)
+
+Soft Actor-Critic policy, lidar + odometry only, trained on `worlds/dynabarn2_train` (300 worlds, seed 2030, disjoint
+from every test set), obstacle mode sampled per episode (off/yield/block), synced start, 60 s episodes. Run 1:
+7 actors on the laptop for 12 h, 3,532 episodes, 1.36 M steps. Code in `tools/learned/`, `dynabarn2_learned/`,
+`scripts/learned_policy.py`; training log `data/learned/run1_progress.csv`.
+
+Training success (last 300 episodes, with exploration noise) rose from 0.34 to about 0.40-0.45 by 0.5 M steps and
+then stayed flat; collisions fell from 0.65 to about 0.3, partly into timeouts.
+
+**Snapshot choice on the development set** (`worlds/dynabarn2`, synced start, 1 repeat, 60 worlds, deterministic
+policy). Rule fixed before looking: highest mean success over the three modes, score as tie-break.
+
+| Snapshot (k updates) | Off | Yield | Block | Mean success | Mean score |
+|---|---|---|---|---|---|
+| v600 | 0.42 | 0.72 | 0.22 | **0.45** | **0.146** |
+| v900 | 0.37 | 0.67 | 0.23 | 0.42 | 0.125 |
+| v1200 | 0.45 | 0.63 | 0.18 | 0.42 | 0.126 |
+| v1340 (last) | 0.33 | 0.67 | 0.18 | 0.39 | 0.098 |
+
+Chosen: **v600** (`data/learned/run1_v600.npz`). Later snapshots did not improve, so more of the same training is
+unlikely to help on its own. Failures are mostly collisions (off 0.53, block 0.72), then timeouts (yield 0.17).
+On the same worlds after the drift fix: MPPI off 0.45 / yield 0.78, RPP 0.44 / 0.77, critic 0.69 / 0.88 / block 0.35.
+
+### 5i test plan (written before any test-set trial)
+
+v600 alone, unchanged, on the two test sets that have post-fix baselines, with the same settings as those runs:
+held-out fixed (`fix_holdout_fixed`, 2 repeats) and confirmation block (`fix_confirm_block`, 1 repeat). Report
+success and score against MPPI, RPP and the critic with the paired world-level bootstrap. Expectation from the
+development set: the learned planner is below the critic on both, and at or below MPPI on success and below it
+on score (it is slower). No further snapshot or setting will be tried on these sets.
