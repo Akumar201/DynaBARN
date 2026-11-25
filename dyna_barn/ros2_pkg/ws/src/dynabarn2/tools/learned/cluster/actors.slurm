@@ -28,7 +28,7 @@ for k in $(seq 0 $((ACTORS - 1))); do
   # On GPU nodes, USE_GPU=1 draws the lidar on the GPU (--nv), which needs far fewer cores.
   apptainer exec --cleanenv ${USE_GPU:+--nv} --home "$LOCAL/home_$k" --bind "$RUN" \
     --env ROS_DOMAIN_ID=$((101 + (TASK * ACTORS + k) % 130)),TMPDIR="$LOCAL/home_$k" \
-    --env TRAIN_MODES="${TRAIN_MODES:-off yield block}",EPISODE_TIME="${EPISODE_TIME:-60}" \
+    --env TRAIN_MODES="${TRAIN_MODES:-off yield block}",EPISODE_TIME="${EPISODE_TIME:-60}",FRAME_STRIDE="${FRAME_STRIDE:-1}" \
     "$SIF" bash -c "source /opt/dynabarn2/install/setup.bash && \
       /opt/dynabarn2/src/dynabarn2/tools/learned/actor_loop.sh '$RUN' $id" &
   sleep 3   # stagger start-up

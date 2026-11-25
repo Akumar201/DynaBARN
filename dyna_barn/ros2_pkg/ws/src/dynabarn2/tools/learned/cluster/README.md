@@ -131,4 +131,5 @@ Choose the snapshot using `worlds/dynabarn2` (the development set) only. Then re
 | `USE_GPU` | actors.slurm | unset | `1` on GPU nodes: lidar drawn on the GPU, so more actors per node (also add `--gres=gpu:1`) |
 | `TRAIN_MODES` | actors.slurm | `off yield block` | obstacle modes sampled per episode |
 | `EPISODE_TIME` | actors.slurm | 60 | time limit per training episode (s) |
+| `FRAME_STRIDE` | both | 1 | control steps between the 4 stacked scans (2 = 0.6 s of motion); set the same for both jobs |
 | `LEARNER_ARGS` | learner.slurm | | e.g. `--warmup 50000 --utd 2` (see `learner.py --help`) |

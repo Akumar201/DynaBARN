@@ -18,6 +18,7 @@ SCAN_BINS = 72
 SCAN_RANGE = 5.0            # m
 SCAN_FOV = (-2.356194490192345, 2.356194490192345)
 FRAMES = 4
+FRAME_STRIDE = 1           # control steps between stacked frames (a policy file may override)
 V_MIN, V_MAX = -0.3, 1.0    # m/s
 W_MAX = 1.9                 # rad/s
 GOAL_SCALE = 20.0
@@ -98,6 +99,7 @@ class NumpyActor:
     def __init__(self, path):
         data = np.load(path)
         self.version = int(data['version']) if 'version' in data else -1
+        self.frame_stride = int(data['frame_stride']) if 'frame_stride' in data else 1
         self.hidden = []
         i = 0
         while f'w{i}' in data:

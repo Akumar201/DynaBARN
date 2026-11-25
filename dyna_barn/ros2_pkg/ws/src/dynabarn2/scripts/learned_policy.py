@@ -43,7 +43,7 @@ class LearnedPolicy(Node):
         for name, default in [('policy_file', ''), ('mode', 'eval'), ('episode_dir', ''),
                               ('world', ''), ('reactive', 'off'), ('seed', -1),
                               ('x', 11.0), ('y', 0.0), ('yaw', math.pi),
-                              ('goal_x', -9.0), ('goal_y', 0.0)]:
+                              ('goal_x', -9.0), ('goal_y', 0.0), ('frame_stride', 0)]:
             self.declare_parameter(name, default)
         p = lambda name: self.get_parameter(name).value  # noqa: E731
         self.mode = p('mode')
@@ -64,6 +64,11 @@ class LearnedPolicy(Node):
             raise RuntimeError(f'mode eval needs a policy file, got "{path}"')
         else:
             self.get_logger().info('No policy yet: using the noisy heuristic')
+        # Frames are FRAME_STRIDE control steps apart. 0 means: take it from the policy file.
+        stride = p('frame_stride') or (self.actor.frame_stride if self.actor else core.FRAME_STRIDE)
+        if self.actor and self.actor.frame_stride != stride:
+            raise RuntimeError(f'frame_stride {stride} differs from the policy\'s {self.actor.frame_stride}')
+        self.stride = stride
 
         self.frames = []
         self.min_scan = core.SCAN_RANGE
@@ -114,10 +119,10 @@ class LearnedPolicy(Node):
 
     def observe(self):
         self.frames.insert(0, self.latest_scan)
-        del self.frames[core.FRAMES:]
+        del self.frames[(core.FRAMES - 1) * self.stride + 1:]
         x, y, yaw, v, w = self.odom
         goal = core.goal_features(x, y, yaw, *self.goal_odom)
-        return core.build_obs(self.frames, goal, (v, w), self.last_cmd), goal
+        return core.build_obs(self.frames[::self.stride], goal, (v, w), self.last_cmd), goal
 
     def step(self):
         if self.finished:

@@ -14,4 +14,4 @@ set -u
 : "${RUN:?set RUN}" "${REPO:?set REPO to the DynaBARN git checkout}" "${VENV:?set VENV to the Python venv with torch}"
 source "$VENV/bin/activate"
 nvidia-smi --query-gpu=name,memory.total --format=csv || true
-python "$REPO/dyna_barn/ros2_pkg/ws/src/dynabarn2/tools/learned/learner.py" --run "$RUN" ${LEARNER_ARGS:-}
+python "$REPO/dyna_barn/ros2_pkg/ws/src/dynabarn2/tools/learned/learner.py" --run "$RUN" --frame_stride ${FRAME_STRIDE:-1} ${LEARNER_ARGS:-}

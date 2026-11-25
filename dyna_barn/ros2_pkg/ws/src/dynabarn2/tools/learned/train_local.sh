@@ -6,6 +6,7 @@
 # Needs: the ros2-jazzy-gz image, the workspace built (with worlds/dynabarn2_train), and PyTorch
 # installed into PYDEPS (default ~/dynabarn2_rl/pydeps), e.g.
 #   docker run --rm -v ~/dynabarn2_rl:/d ros2-jazzy-gz:latest pip3 install --break-system-packages --target /d/pydeps torch
+# FRAME_STRIDE=2 spaces the 4 stacked scans 0.2 s apart (default 1: 0.1 s).
 # Restarting with the same run dir resumes training (the learner reloads checkpoint and episodes).
 # Watch: column -s, -t < <run>/progress.csv | tail      Stop early: touch <run>/STOP
 set -u
@@ -21,12 +22,12 @@ echo "$(date) training $RUN: $ACTORS actors for $HOURS h" | tee -a "$RUN/train_l
 
 docker run -d --rm --name "${TAG}_learner" --gpus all --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -e PYTHONPATH=/pydeps -v "$PYDEPS:/pydeps:ro" -v "$WS:/ws:ro" -v "$RUN:/run_dir" ros2-jazzy-gz:latest \
-  bash -c "python3 /ws/src/dynabarn2/tools/learned/learner.py --run /run_dir --replay 1000000 ${LEARNER_ARGS:-} \
+  bash -c "python3 /ws/src/dynabarn2/tools/learned/learner.py --run /run_dir --replay 1000000 --frame_stride ${FRAME_STRIDE:-1} ${LEARNER_ARGS:-} \
            >> /run_dir/learner.log 2>&1" > /dev/null
 
 for k in $(seq 0 $((ACTORS - 1))); do
   docker run -d --rm --name "${TAG}_actor$k" --network none -v "$WS:/ws" -v "$RUN:/run_dir" \
-    -e TRAIN_MODES="${TRAIN_MODES:-off yield block}" -e EPISODE_TIME="${EPISODE_TIME:-60}" \
+    -e TRAIN_MODES="${TRAIN_MODES:-off yield block}" -e EPISODE_TIME="${EPISODE_TIME:-60}" -e FRAME_STRIDE="${FRAME_STRIDE:-1}" \
     ros2-jazzy-gz:latest bash -c "source /ws/install/setup.bash && \
       /ws/src/dynabarn2/tools/learned/actor_loop.sh /run_dir $k" > /dev/null
   sleep 3

@@ -88,6 +88,7 @@ def navigation(context):
             parameters=[{'policy_file': os.environ.get('LEARNED_POLICY', ''),
                          'mode': os.environ.get('LEARNED_MODE', 'eval'),
                          'episode_dir': os.environ.get('LEARNED_EPISODE_DIR', ''),
+                         'frame_stride': int(os.environ.get('LEARNED_FRAME_STRIDE', '0')),
                          'world': get('world_file'), 'reactive': get('reactive'),
                          **{name: float(get(name)) for name in ('x', 'y', 'yaw', 'goal_x', 'goal_y')}}])]
     # Give the robot's bringup time to come up before Nav2 starts.

@@ -55,8 +55,8 @@ class Actor(nn.Module):
         logp -= (2 * (np.log(2) - u - F.softplus(-2 * u))).sum(-1)
         return a, logp
 
-    def export(self, path, version):
-        arrays = {'version': np.int64(version)}
+    def export(self, path, version, frame_stride=1):
+        arrays = {'version': np.int64(version), 'frame_stride': np.int64(frame_stride)}
         for i, layer in enumerate(self.body):
             arrays[f'w{i}'] = layer.weight.detach().cpu().numpy().T.astype(np.float32)
             arrays[f'b{i}'] = layer.bias.detach().cpu().numpy().astype(np.float32)
@@ -129,6 +129,7 @@ def main():
     ap.add_argument('--hidden', type=int, nargs='+', default=[512, 512, 256])
     ap.add_argument('--batch', type=int, default=512)
     ap.add_argument('--lr', type=float, default=3e-4)
+    ap.add_argument('--frame_stride', type=int, default=1, help='must match the actors\' FRAME_STRIDE')
     ap.add_argument('--gamma', type=float, default=0.99)
     ap.add_argument('--tau', type=float, default=0.005)
     ap.add_argument('--replay', type=int, default=2_000_000)
@@ -212,9 +213,9 @@ def main():
     def export():
         nonlocal version
         version += 1
-        actor.export(os.path.join(pol_dir, 'policy_latest.npz'), version)
+        actor.export(os.path.join(pol_dir, 'policy_latest.npz'), version, args.frame_stride)
         if version % args.snapshot_every == 0:
-            actor.export(os.path.join(pol_dir, f'policy_v{version}.npz'), version)
+            actor.export(os.path.join(pol_dir, f'policy_v{version}.npz'), version, args.frame_stride)
         torch.save(dict(actor=actor.state_dict(), critic=critic.state_dict(), target=target.state_dict(),
                         log_alpha=log_alpha.data, opt_a=opt_a.state_dict(), opt_c=opt_c.state_dict(),
                         opt_al=opt_al.state_dict(), updates=updates, version=version), ckpt_path + '.tmp')

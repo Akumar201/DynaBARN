@@ -24,7 +24,8 @@ mkdir -p "$RUN/buffer" "$RUN/logs" "$RUN/trials"
 
 export GZ_PARTITION="actor_$(hostname)_$ID" GZ_IP=127.0.0.1
 export ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-$(( (ID % 130) + 101 ))} ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
-export LEARNED_MODE=train LEARNED_EPISODE_DIR="$RUN/buffer" LEARNED_POLICY="$RUN/policy/policy_latest.npz"
+export LEARNED_MODE=train LEARNED_EPISODE_DIR="$RUN/buffer" LEARNED_POLICY="$RUN/policy/policy_latest.npz" \
+  LEARNED_FRAME_STRIDE=${FRAME_STRIDE:-1}
 LOG="$RUN/logs/actor_$(hostname)_$ID.log"
 # ROS and Gazebo write logs for every launch; keep them in node-local scratch, emptied each episode.
 export ROS_LOG_DIR=${ROS_LOG_DIR:-${TMPDIR:-/tmp}/dynabarn2_roslog_$GZ_PARTITION}
