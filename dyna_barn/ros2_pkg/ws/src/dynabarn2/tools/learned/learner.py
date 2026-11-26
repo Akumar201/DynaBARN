@@ -140,6 +140,11 @@ def main():
     ap.add_argument('--export_every', type=int, default=1000, help='updates between policy exports')
     ap.add_argument('--snapshot_every', type=int, default=20, help='exports between kept snapshots')
     ap.add_argument('--max_updates', type=int, default=3_000_000)
+    # Fine-tuning (used only when the run has no checkpoint yet)
+    ap.add_argument('--init_actor', default='', help='start the actor from this exported policy .npz')
+    ap.add_argument('--init_critic', default='', help='start critic, target and alpha from this checkpoint.pt')
+    ap.add_argument('--seed_buffer', default='', help='preload episodes from this buffer folder (not counted in stats)')
+    ap.add_argument('--critic_warmup', type=int, default=0, help='critic-only updates before the actor trains')
     args = ap.parse_args()
 
     run = os.path.abspath(args.run)
@@ -169,6 +174,22 @@ def main():
         opt_al.load_state_dict(ck['opt_al'])
         updates, version = ck['updates'], ck['version']
         print(f'Resumed at update {updates}, policy version {version}', flush=True)
+    else:
+        if args.init_actor:
+            with np.load(args.init_actor) as d:
+                assert (int(d['frame_stride']) if 'frame_stride' in d else 1) == args.frame_stride, 'frame_stride mismatch'
+                with torch.no_grad():
+                    for i, layer in enumerate(actor.body):
+                        layer.weight.copy_(torch.as_tensor(d[f'w{i}'].T)); layer.bias.copy_(torch.as_tensor(d[f'b{i}']))
+                    for name, layer in (('mu', actor.mu), ('ls', actor.ls)):
+                        layer.weight.copy_(torch.as_tensor(d[f'{name}_w'].T))
+                        layer.bias.copy_(torch.as_tensor(d[f'{name}_b']))
+            print(f'Actor from {args.init_actor}', flush=True)
+        if args.init_critic:
+            ck = torch.load(args.init_critic, map_location=dev)
+            critic.load_state_dict(ck['critic']); target.load_state_dict(ck['target'])
+            log_alpha.data[:] = ck['log_alpha']
+            print(f'Critic and alpha from {args.init_critic}', flush=True)
 
     replay = Replay(args.replay)
     seen = set()
@@ -231,7 +252,19 @@ def main():
         print(f'v{version} updates {updates} episodes {episodes} transitions {transitions} '
               f'success {rate("succeeded")} collision {rate("collided")}', flush=True)
 
-    budget = 0.0
+    if args.seed_buffer:
+        n = 0
+        for path in sorted(glob.glob(os.path.join(args.seed_buffer, '*.npz'))):
+            try:
+                ep = load_episode(path)
+            except Exception:
+                continue
+            if ep is not None:
+                replay.add(ep['obs'], ep['act'], ep['rew'], ep['nxt'], ep['done'])
+                n += len(ep['act'])
+        print(f'Seeded {n} transitions from {args.seed_buffer} (replay holds {replay.n})', flush=True)
+
+    budget = float(args.critic_warmup if updates == 0 else 0)
     last_scan = 0.0
     def clip(net):
         if args.grad_clip > 0:
@@ -256,13 +289,16 @@ def main():
         loss_c = F.mse_loss(q1, y) + F.mse_loss(q2, y)
         opt_c.zero_grad(); loss_c.backward(); clip(critic); opt_c.step()
 
-        a, logp = actor(obs)
-        q1p, q2p = critic(obs, a)
-        loss_a = (alpha * logp - torch.min(q1p, q2p)).mean()
-        opt_a.zero_grad(); loss_a.backward(); clip(actor); opt_a.step()
+        if updates >= args.critic_warmup:   # during warm-up only the critic learns
+            a, logp = actor(obs)
+            q1p, q2p = critic(obs, a)
+            loss_a = (alpha * logp - torch.min(q1p, q2p)).mean()
+            opt_a.zero_grad(); loss_a.backward(); clip(actor); opt_a.step()
 
-        loss_al = -(log_alpha * (logp.detach() + target_entropy)).mean()
-        opt_al.zero_grad(); loss_al.backward(); opt_al.step()
+            loss_al = -(log_alpha * (logp.detach() + target_entropy)).mean()
+            opt_al.zero_grad(); loss_al.backward(); opt_al.step()
+        else:
+            loss_a = torch.zeros(())
 
         with torch.no_grad():
             for p, pt in zip(critic.parameters(), target.parameters()):
