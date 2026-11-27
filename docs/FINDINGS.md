@@ -511,3 +511,27 @@ both motion-aware planners (prediction critic, learned policy) get through about
 almost never do. This refines 5e/5h: the geometry sets a hard floor for planners that do not reason about motion,
 and the remaining gap is shared by two very different motion-aware planners. The learned policy is the less
 reliable on easy worlds (0.64 vs 1.00 on block-safe ones). Exploratory split, not pre-registered.
+
+### 5i follow-ups: runs 2–4 did not beat v600 (2026-11-27)
+
+Three more 12 h runs on the same training worlds, each judged on the dev set only:
+
+| Run | Change from run 1 | Training success | Outcome |
+|---|---|---|---|
+| 2 | frame stride 2 (scans 0.2 s apart, 0.6 s of motion), lr 1e-4 | peak .26, then 0 | critic diverged after ~600k updates (loss 0.3 → 1e5) |
+| 3 | frame stride 2, lr 3e-4, gradient clip 10, critic targets clipped to ±50 | peak .37, end .10 | no divergence, but success swung twice; not evaluated |
+| 4 | fine-tune v600: run 1 critic and buffer, 20k critic-only updates, lr 1e-4, clips | dips to .12, peak .45, end .37 | evaluated below |
+
+Run 4 snapshots on the dev set (60 worlds × 1 repeat per mode; a few no_start dropped):
+
+| Snapshot | Off | Yield | Block | Mean success | Mean score |
+|---|---|---|---|---|---|
+| v600 (run 1) | .42 | .72 | .22 | **.450** | **.146** |
+| ft v850 | .42 | .62 | .25 | .428 | .138 |
+| ft v1580 | .47 | .60 | .22 | .431 | .129 |
+| ft v1320 | .39 | .56 | .23 | .394 | .126 |
+
+No snapshot beats v600. ft v1320 (best by training success) is significantly worse under yield
+(−.15, 95% CI −.27 to −.03), and off and block are ties. Training-episode success is a poor guide to snapshot
+choice. v600 stays the learned planner, and the 5i test results stand. Longer motion memory (stride 2)
+did not help when trained from scratch, and fine-tuning did not add anything.
